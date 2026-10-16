@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 
 root = Path(__file__).resolve().parents[1]
 source = (root / "content/MqttClient.qplug").read_bytes()
-assert hashlib.sha256(source).hexdigest() == "fa807339c3e54cd804395e4e1e3da6a2aba89a2b4c34b3b23dc899964510ad83", "Update the reviewed source digest for an intentional plugin revision"
+assert hashlib.sha256(source).hexdigest() == "2e58fee31eff8e85193db61364b710fea32116e50c8cae4e8c84d842ca031ca4", "Update the reviewed source digest for an intentional plugin revision"
 info = re.search(r"PluginInfo\s*=\s*\{(.*?)\}", source.decode("utf-8-sig"), re.S)[1]
 version = re.search(r'\bVersion\s*=\s*"([^"]+)"', info)[1]
 project = ET.parse(root / "MqttClient.csproj").getroot()
