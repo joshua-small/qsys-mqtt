@@ -1,0 +1,82 @@
+
+ProbeCases = {
+  {"wrong-fresh", wrong_ca, 18991},
+  {"correct", ca, 18991},
+  {"wrong-after-correct", wrong_ca, 18991},
+  {"wrong-new-port", wrong_ca, 18992},
+  {"correct-new-port", ca, 18992},
+  {"correct-again", ca, 18991},
+  {"wrong-after-empty", wrong_ca, 18991, nil, nil, true},
+  {"untrusted-client-fresh", ca, 18994, untrusted_client, untrusted_client_key},
+  {"trusted-client", ca, 18994, client, client_key},
+  {"untrusted-client-after-trusted", ca, 18994, untrusted_client, untrusted_client_key},
+  {"renewed-client", ca, 18994, client_renewed, client_renewed_key},
+  {"no-client-after-trusted", ca, 18994},
+}
+ProbeReporter = TcpSocket.New()
+ProbeReporter.ReconnectTimeout = 0
+ProbeTimer = Timer.New()
+ProbeIndex = 0
+ProbeFinished = false
+function ProbeLog(value)
+  print(value)
+  if ProbeReporter.IsConnected then ProbeReporter:Write(value .. "\n") end
+end
+function ProbeIgnore() end
+function ProbeDone(index, socket, result)
+  if ProbeFinished or index ~= ProbeIndex or socket ~= ProbeSocket then return end
+  ProbeFinished = true
+  ProbeLog(ProbeCases[ProbeIndex][1] .. " " .. result)
+  ProbeTimer:Stop()
+  socket.Connected = ProbeIgnore
+  socket.Data = ProbeIgnore
+  socket.Error = ProbeIgnore
+  socket.Closed = ProbeIgnore
+  socket.Timeout = ProbeIgnore
+  socket.Reconnect = ProbeIgnore
+  ProbeSocket = nil
+  pcall(function() socket:Disconnect() end)
+  ProbeTimer.EventHandler = ProbeNext
+  ProbeTimer:Start(0.3)
+end
+function ProbeNext()
+  ProbeTimer:Stop()
+  ProbeIndex = ProbeIndex + 1
+  if ProbeIndex > #ProbeCases then ProbeLog("DONE"); return end
+  local c = ProbeCases[ProbeIndex]
+  ProbeFinished = false
+  ProbeSocket = TcpSocket.NewTls()
+  local index, socket = ProbeIndex, ProbeSocket
+  local function current()
+    return not ProbeFinished and index == ProbeIndex and socket == ProbeSocket
+  end
+  local function finish(result)
+    ProbeDone(index, socket, result)
+  end
+  ProbeSocket.ReconnectTimeout = 0
+  ProbeSocket.ReadTimeout = 0
+  ProbeSocket.WriteTimeout = 0
+  if c[4] then ProbeSocket.ClientCertData=c[4]; ProbeSocket.ClientKeyData=c[5] end
+  if c[6] then ProbeSocket.CACertData="" end
+  ProbeSocket.CACertData = c[2]
+  ProbeSocket.ValidateCertificate = true
+  ProbeLog(c[1].." START caReadback="..tostring(ProbeSocket.CACertData==c[2]).." validate="..tostring(ProbeSocket.ValidateCertificate))
+  ProbeSocket.Connected = function(s)
+    if not current() then return end
+    s:Write(c[1] .. "\n")
+    ProbeLog(c[1] .. " TLS-CONNECTED-awaiting-server-ACK")
+  end
+  ProbeSocket.Data = function(s)
+    if not current() then return end
+    local line = s:ReadLine(TcpSocket.EOL.Lf)
+    if line then finish(line == "ACK " .. c[1] and "ACCEPTED" or "BAD-ACK") end
+  end
+  ProbeSocket.Error = function(s, err) finish("ERROR " .. tostring(err)) end
+  ProbeSocket.Closed = function() finish("CLOSED") end
+  ProbeSocket.Timeout = function() finish("TIMEOUT") end
+  ProbeTimer.EventHandler = function() finish("DEADLINE") end
+  ProbeTimer:Start(5)
+  ProbeSocket:Connect("127.0.0.1", c[3])
+end
+ProbeReporter.Connected = function() ProbeLog("BEGIN native bare-TLS no server tickets"); ProbeNext() end
+ProbeReporter:Connect("127.0.0.1",18990)
