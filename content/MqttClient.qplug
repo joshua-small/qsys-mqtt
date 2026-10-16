@@ -1,0 +1,5412 @@
+-- MQTT client candidate for Q-SYS 10.5. See the adjacent README for acceptance limits.
+PluginInfo = {
+  Name = "Utilities~MQTT Client",
+  Version = "0.3.0.1",
+  BuildVersion = "0.3.0.1",
+  Id = "f622973c-31a1-4ab0-afd0-2fbb9a436eb3",
+  Author = "QsysExplode project",
+  Manufacturer = "Generic",
+  Model = "MQTT 3.1.1 / 5.0",
+  Description = "MQTT 3.1.1 / 5.0 publish/subscribe, QoS 0/1 and clean sessions. Development candidate.",
+}
+
+--*** Native presentation constants ***
+White = { 255, 255, 255 }
+Black = { 0, 0, 0 }
+PanelGray = { 230, 230, 230 }
+ReadoutGray = { 194, 194, 194 }
+OutlineGray = { 128, 128, 128 }
+MqttPurple = { 102, 0, 102 }
+IndicatorGreen = { 0, 159, 60 }
+-- Supplied MQTT SVG, full 1100 x 280 viewBox and original #660066 colors.
+MqttLogo =
+  "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGJhc2VQcm9maWxlPSJ0aW55IiB2aWV3Qm94PSIwIDAgMTEwMCAyODAiIG92ZXJmbG93PSJ2aXNpYmxlIiB4bWxuczp2PSJodHRwczovL3ZlY3RhLmlvL25hbm8iPjxwYXRoIGQ9Ik0zOTkuNiAxNDIuNWMxLjcgMy43IDMuMyA3LjUgNC44IDExLjRhMTQ5LjMgMTQ5LjMgMCAwIDEgNC45LTExLjZjMS43LTMuNyAzLjUtNy40IDUuMy0xMC45TDQ2NSAzMmMuOS0xLjcgMS44LTMgMi44LTQgLjktLjkgMi0xLjYgMy4yLTIuMXMyLjUtLjcgNC0uN2g0MHYxOTYuNmgtNDAuMlYxMDguNmMwLTUuNS4zLTExLjQuOC0xNy44bC01Mi4xIDEwMS4xYy0xLjYgMy4yLTMuOCA1LjUtNi41IDcuMi0yLjcgMS42LTUuOSAyLjQtOS40IDIuNGgtNi4yYy0zLjUgMC02LjYtLjgtOS40LTIuNC0yLjctMS42LTQuOS00LTYuNS03LjJMMzMzIDkwLjdjLjQgMy4yLjYgNi4zLjggOS40cy4zIDYgLjMgOC42djExMy4xaC00MC4yVjI1LjJoNDBjMS41IDAgMi44LjIgNCAuN3MyLjIgMS4xIDMuMiAyLjFjLjkuOSAxLjkgMi4zIDIuOCA0bDUwLjYgOTkuOWMxLjcgMy40IDMuNSA2LjkgNS4xIDEwLjZ6bTMzMS4xLTE5LjFjMCA4LjUtLjkgMTYuNi0yLjYgMjQuNC0xLjggNy44LTQuMyAxNS4xLTcuNiAyMS45cy03LjMgMTMuMi0xMi4yIDE5Yy00LjggNS45LTEwLjMgMTEtMTYuNCAxNS41bDQ5LjggNTQuNGgtMzcuNWMtNS40IDAtMTAuMy0uNy0xNC43LTJzLTguMy0zLjktMTEuNy03LjlsLTI0LjQtMjcuNGMtNCAuOC04IDEuNC0xMi4xIDEuOS00LjEuNC04LjMuNy0xMi42LjctMTUuMyAwLTI5LjMtMi42LTQxLjktNy43cy0yMy40LTEyLjItMzIuMy0yMS4zYy05LTktMTUuOS0xOS43LTIwLjgtMzEuOXMtNy40LTI1LjUtNy40LTM5LjcgMi41LTI3LjQgNy40LTM5LjdjNC45LTEyLjIgMTEuOC0yMi45IDIwLjgtMzEuOXMxOS43LTE2LjEgMzIuMy0yMS4yIDI2LjUtNy43IDQxLjktNy43YzE1LjMgMCAyOS4yIDIuNiA0MS44IDcuOHMyMy4zIDEyLjMgMzIuMiAyMS4zIDE1LjggMTkuNiAyMC43IDMxLjljNC45IDEyLjIgNy4zIDI1LjQgNy4zIDM5LjZ6bS00Ni43IDBjMC05LjctMS4zLTE4LjUtMy44LTI2LjNzLTYuMS0xNC40LTEwLjktMTkuOGMtNC43LTUuNC0xMC41LTkuNS0xNy4zLTEyLjRzLTE0LjYtNC4zLTIzLjQtNC4zLTE2LjcgMS40LTIzLjYgNC4zLTEyLjcgNy0xNy40IDEyLjQtOC4zIDEyLTEwLjkgMTkuOGMtMi41IDcuOC0zLjggMTYuNS0zLjggMjYuM3MxLjMgMTguNiAzLjggMjYuNCA2LjEgMTQuNCAxMC45IDE5LjhjNC43IDUuNCAxMC41IDkuNSAxNy40IDEyLjQgNi45IDIuOCAxNC43IDQuMyAyMy42IDQuMyA4LjcgMCAxNi41LTEuNCAyMy40LTQuMyA2LjgtMi44IDEyLjYtNyAxNy4zLTEyLjRzOC4zLTEyIDEwLjktMTkuOCAzLjgtMTYuNiAzLjgtMjYuNHptMTkzLjItOTguM3YzNi4yaC01My4zdjE2MC41aC00NS42VjYxLjNINzI1VjI1LjFoMTUyLjJ6bTE3NC42IDB2MzYuMmgtNTUuM3YxNjAuNWgtNDUuNlY2MS4zaC01My4zVjI1LjFoMTU0LjJ6IiBmaWxsPSIjNjA2Ii8+PHBhdGggZD0iTTQ2IDQxLjR2MzFoLjZjODQuNCAwIDE1My4yIDY4IDE1My45IDE1MS44aDMwLjFDMjI5LjggMTIzLjUgMTQ3LjQgNDEuNyA0NiA0MS40em0wIDY0djMxaC42YzQ4LjkgMCA4OC44IDM5LjMgODkuNSA4Ny44aDMwLjFjLS43LTY1LjQtNTQuMy0xMTguNS0xMjAuMi0xMTguOHpNMjQ4LjggMTQ0VjgxLjVDMjQxLjEgNzEgMjMxLjYgNTkgMjIyLjEgNDkuN2MtMTAuNi0xMC41LTIzLTIwLTM1LTI4LjNoLTY2LjRDMTc4LjkgNDIuMyAyMjUuNiA4Ny4yIDI0OC44IDE0NHoiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNNDYuNSAxMzYuNGgtLjZWMjE0YzAgNS42IDQuNiAxMC4yIDEwLjIgMTAuMkgxMzZjLS43LTQ4LjUtNDAuNS04Ny44LTg5LjUtODcuOHptMC02NGgtLjZ2MzNjNjUuOS4zIDExOS41IDUzLjMgMTIwLjIgMTE4LjhoMzQuMkMxOTkuNyAxNDAuNCAxMzEgNzIuNCA0Ni41IDcyLjR6bTIwMi4zIDE0MS43VjE0NGMtMjMuMi01Ni44LTY5LjktMTAxLjctMTI4LTEyMi42SDU2LjFjLTUuNiAwLTEwLjIgNC42LTEwLjIgMTAuMnY5LjljMTAxLjQuMyAxODMuOSA4MiAxODQuNSAxODIuOGg4LjJjNS43LS4xIDEwLjItNC42IDEwLjItMTAuMnpNMjIyLjEgNDkuN2M5LjQgOS40IDE5IDIxLjMgMjYuNyAzMS44di01MGExMC4wNyAxMC4wNyAwIDAgMC0xMC4xLTEwLjFoLTUxLjVjMTIgOC4zIDI0LjQgMTcuOCAzNC45IDI4LjN6IiBmaWxsPSIjNjA2Ii8+PC9zdmc+"
+
+--*** Reserved design-time functions ***
+function GetColor(props)
+  return MqttPurple
+end
+
+function GetPrettyName(props)
+  return "MQTT Client " .. PluginInfo.Version
+end
+
+function GetProperties()
+  return {
+    {
+      Name = "Channels",
+      Type = "integer",
+      Min = 1,
+      Max = 8,
+      Value = 2,
+    },
+    {
+      Name = "MQTT Version",
+      Type = "enum",
+      Choices = { "3.1.1", "5.0" },
+      Value = "3.1.1",
+    },
+    {
+      Name = "Debug Print",
+      Type = "enum",
+      Choices = { "None", "Tx", "Rx", "Tx/Rx", "Function Calls", "All" },
+      Value = "None",
+    },
+  }
+end
+
+function GetPages(props)
+  local pages = { { name = "Setup" } }
+  for index = 1, props.Channels.Value do
+    table.insert(pages, { name = "Channel " .. index })
+  end
+  table.insert(pages, { name = "Certificates" })
+  return pages
+end
+
+function GetControls(props)
+  local controls = {
+    {
+      Name = "IPAddress",
+      ControlType = "Text",
+      DefaultValue = "",
+      UserPin = false,
+    },
+    {
+      Name = "Port",
+      ControlType = "Knob",
+      ControlUnit = "Integer",
+      Min = 1,
+      Max = 65535,
+      DefaultValue = 1883,
+    },
+    {
+      Name = "ClientId",
+      ControlType = "Text",
+      DefaultValue = "",
+    },
+    {
+      Name = "Username",
+      ControlType = "Text",
+      DefaultValue = "",
+    },
+    {
+      Name = "Password",
+      ControlType = "Text",
+      DefaultValue = "",
+      UserPin = false,
+    },
+    {
+      Name = "Tls",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      DefaultValue = false,
+    },
+    {
+      Name = "CaCertificate",
+      ControlType = "Text",
+      DefaultValue = "",
+    },
+    {
+      Name = "CaFromFile",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      DefaultValue = false,
+      UserPin = false,
+    },
+    {
+      Name = "CaCertificateFile",
+      ControlType = "Text",
+      DefaultValue = "",
+      UserPin = false,
+    },
+    {
+      Name = "MutualTls",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      DefaultValue = false,
+      UserPin = false,
+    },
+    {
+      Name = "ClientCertificateFile",
+      ControlType = "Text",
+      DefaultValue = "",
+      UserPin = false,
+    },
+    {
+      Name = "ClientKeyFile",
+      ControlType = "Text",
+      DefaultValue = "",
+      UserPin = false,
+    },
+    {
+      Name = "KeepAlive",
+      ControlType = "Knob",
+      ControlUnit = "Integer",
+      Min = 0,
+      Max = 65535,
+      DefaultValue = 30,
+    },
+    {
+      Name = "Enable",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      DefaultValue = false,
+      UserPin = true,
+      PinStyle = "Input",
+    },
+    {
+      Name = "Reconnect",
+      ControlType = "Button",
+      ButtonType = "Trigger",
+      UserPin = true,
+      PinStyle = "Input",
+    },
+    {
+      Name = "Status",
+      ControlType = "Indicator",
+      IndicatorType = "Status",
+      UserPin = true,
+      PinStyle = "Output",
+    },
+    {
+      Name = "Connected",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      UserPin = true,
+      PinStyle = "Output",
+    },
+    {
+      Name = "WillTopic",
+      ControlType = "Text",
+      DefaultValue = "",
+    },
+    {
+      Name = "WillPayload",
+      ControlType = "Text",
+      DefaultValue = "",
+    },
+    {
+      Name = "WillQos",
+      ControlType = "Text",
+      DefaultValue = "0",
+    },
+    {
+      Name = "WillRetain",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      DefaultValue = false,
+    },
+  }
+  for index = 1, props.Channels.Value do
+    table.insert(controls, {
+      Name = "PublishTopic" .. index,
+      ControlType = "Text",
+      DefaultValue = "",
+      UserPin = true,
+      PinStyle = "Input",
+    })
+    table.insert(controls, {
+      Name = "PublishPayload" .. index,
+      ControlType = "Text",
+      DefaultValue = "",
+      UserPin = true,
+      PinStyle = "Input",
+    })
+    table.insert(controls, {
+      Name = "PublishQos" .. index,
+      ControlType = "Text",
+      DefaultValue = "0",
+    })
+    table.insert(controls, {
+      Name = "PublishRetain" .. index,
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      DefaultValue = false,
+    })
+    table.insert(controls, {
+      Name = "Publish" .. index,
+      ControlType = "Button",
+      ButtonType = "Trigger",
+      UserPin = true,
+      PinStyle = "Input",
+    })
+    table.insert(controls, {
+      Name = "PublishResult" .. index,
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Output",
+    })
+    table.insert(controls, {
+      Name = "SubscribeFilter" .. index,
+      ControlType = "Text",
+      DefaultValue = "",
+    })
+    table.insert(controls, {
+      Name = "SubscribeQos" .. index,
+      ControlType = "Text",
+      DefaultValue = "0",
+    })
+    table.insert(controls, {
+      Name = "Subscribed" .. index,
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      UserPin = true,
+      PinStyle = "Output",
+    })
+    table.insert(controls, {
+      Name = "SubscriptionResult" .. index,
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Output",
+    })
+    table.insert(controls, {
+      Name = "ReceivedTopic" .. index,
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Output",
+    })
+    table.insert(controls, {
+      Name = "ReceivedPayload" .. index,
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Output",
+    })
+    table.insert(controls, {
+      Name = "ReceivedFormat" .. index,
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Output",
+    })
+    table.insert(controls, {
+      Name = "MessageCount" .. index,
+      ControlType = "Knob",
+      ControlUnit = "Integer",
+      Min = 0,
+      Max = 999999999,
+      DefaultValue = 0,
+      UserPin = true,
+      PinStyle = "Output",
+    })
+    table.insert(controls, {
+      Name = "MessageReceived" .. index,
+      ControlType = "Button",
+      ButtonType = "Trigger",
+      UserPin = true,
+      PinStyle = "Output",
+    })
+    table.insert(controls, {
+      Name = "ReceivedValid" .. index,
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      UserPin = true,
+      PinStyle = "Output",
+    })
+  end
+  return controls
+end
+
+function GetComponents(props)
+  return {
+    {
+      Name = "SecretStorage",
+      Type = "custom_controls",
+      Properties = {
+        type_1 = 13,
+        count_1 = 1,
+      },
+    },
+  }
+end
+
+--*** Page graphics and repeated channel layouts ***
+function SetupLayout(layout, graphics)
+  table.insert(graphics, {
+    Type = "GroupBox",
+    Position = { 5, 130 },
+    Size = { 390, 430 },
+    Fill = PanelGray,
+    StrokeWidth = 0,
+  })
+  table.insert(graphics, {
+    Type = "GroupBox",
+    Position = { 5, 570 },
+    Size = { 390, 155 },
+    Fill = PanelGray,
+    StrokeWidth = 0,
+  })
+  table.insert(graphics, {
+    Type = "Header",
+    Text = "Connection",
+    Position = { 35, 140 },
+    Size = { 330, 16 },
+    Color = Black,
+    FontSize = 14,
+  })
+  table.insert(graphics, {
+    Type = "Header",
+    Text = "Last Will (optional)",
+    Position = { 35, 580 },
+    Size = { 330, 16 },
+    Color = Black,
+    FontSize = 14,
+  })
+  local rows = {
+    { "IPAddress", "Broker address", "Text", 165 },
+    { "Port", "Port", "Text", 190 },
+    { "ClientId", "Unique client ID", "Text", 215 },
+    { "Username", "Username", "Text", 240 },
+    { "Password", "Password", "Text", 265 },
+    { "Tls", "Use TLS", "Button", 290 },
+    { "CaCertificate", "CA certificate (PEM)", "Text", 315 },
+    { "KeepAlive", "Keepalive (seconds)", "Text", 390 },
+    { "Enable", "Enable connection", "Button", 415 },
+    { "Reconnect", "Apply / reconnect", "Button", 440 },
+    { "Connected", "Broker connected", "Led", 465 },
+    { "Status", "Status", "Text", 490 },
+    { "WillTopic", "Topic (blank disables)", "Text", 605 },
+    { "WillPayload", "Payload", "Text", 630 },
+    { "WillQos", "QoS", "ComboBox", 655 },
+    { "WillRetain", "Retain", "Button", 680 },
+  }
+  for _, row in ipairs(rows) do
+    local name, label, style, y = table.unpack(row)
+    table.insert(graphics, {
+      Type = "Label",
+      Text = label,
+      Position = { 15, y },
+      Size = { 155, 20 },
+      Color = Black,
+      HTextAlign = "Right",
+      FontSize = 13,
+    })
+    layout[name] = {
+      Style = style,
+      Position = { 180, y },
+      Size = { 200, name == "CaCertificate" and 65 or 20 },
+      PrettyName = "Setup~" .. label,
+      FontSize = 13,
+    }
+    if style == "Button" then
+      layout[name].ButtonStyle = name == "Reconnect" and "Trigger" or "Toggle"
+      layout[name].Size = { 45, 20 }
+      layout[name].Color = White
+      layout[name].CornerRadius = 2
+      layout[name].Margin = 2
+    elseif style == "Led" then
+      layout[name].Color = IndicatorGreen
+      layout[name].Size = { 20, 20 }
+    end
+  end
+  layout.Status.Size = { 200, 30 }
+  layout.CaCertificate.WordWrap = true
+  table.insert(graphics, {
+    Type = "Label",
+    Text = "Setup and subscription changes apply on reconnect.",
+    Position = { 15, 525 },
+    Size = { 370, 20 },
+    Color = Black,
+    FontSize = 11,
+  })
+end
+
+function CertificateLayout(layout, graphics)
+  table.insert(graphics, {
+    Type = "GroupBox",
+    Position = { 5, 130 },
+    Size = { 390, 110 },
+    Fill = PanelGray,
+    StrokeWidth = 0,
+  })
+  table.insert(graphics, {
+    Type = "Header",
+    Text = "Broker trust",
+    Position = { 35, 140 },
+    Size = { 330, 16 },
+    Color = Black,
+    FontSize = 14,
+  })
+  table.insert(graphics, {
+    Type = "GroupBox",
+    Position = { 5, 250 },
+    Size = { 390, 140 },
+    Fill = PanelGray,
+    StrokeWidth = 0,
+  })
+  table.insert(graphics, {
+    Type = "Header",
+    Text = "Client identity (mutual TLS)",
+    Position = { 35, 260 },
+    Size = { 330, 16 },
+    Color = Black,
+    FontSize = 14,
+  })
+  local rows = {
+    { "CaFromFile", "Use CA file", "Button", 165 },
+    { "CaCertificateFile", "CA file path", "Text", 190 },
+    { "MutualTls", "Use client certificate", "Button", 285 },
+    { "ClientCertificateFile", "Client certificate file", "Text", 310 },
+    { "ClientKeyFile", "Private key file", "Text", 335 },
+  }
+  for _, row in ipairs(rows) do
+    local name, label, style, y = table.unpack(row)
+    table.insert(graphics, {
+      Type = "Label",
+      Text = label,
+      Position = { 15, y },
+      Size = { 155, 20 },
+      Color = Black,
+      HTextAlign = "Right",
+      FontSize = 13,
+    })
+    layout[name] = {
+      Style = style,
+      Position = { 180, y },
+      Size = { 200, 20 },
+      PrettyName = "Certificates~" .. label,
+      FontSize = 13,
+    }
+    if style == "Button" then
+      layout[name].ButtonStyle = "Toggle"
+      layout[name].Size = { 45, 20 }
+      layout[name].Color = White
+      layout[name].CornerRadius = 2
+      layout[name].Margin = 2
+    end
+  end
+  table.insert(graphics, {
+    Type = "Label",
+    Text = "CA file replaces the pasted CA on Setup.",
+    Position = { 15, 215 },
+    Size = { 370, 20 },
+    Color = Black,
+    FontSize = 11,
+  })
+  table.insert(graphics, {
+    Type = "Label",
+    Text = "Unencrypted PEM key; only its path is saved.",
+    Position = { 15, 360 },
+    Size = { 370, 20 },
+    Color = Black,
+    FontSize = 11,
+  })
+  table.insert(graphics, {
+    Type = "Label",
+    Text = "Example: media/TLS_Certificates/ca.pem\nEnable TLS and Apply / reconnect on Setup.",
+    Position = { 15, 400 },
+    Size = { 370, 40 },
+    Color = Black,
+    FontSize = 11,
+  })
+end
+
+function ChannelLayout(layout, graphics, channel)
+  table.insert(graphics, {
+    Type = "GroupBox",
+    Position = { 5, 130 },
+    Size = { 390, 185 },
+    Fill = PanelGray,
+    StrokeWidth = 0,
+  })
+  table.insert(graphics, {
+    Type = "GroupBox",
+    Position = { 5, 325 },
+    Size = { 390, 285 },
+    Fill = PanelGray,
+    StrokeWidth = 0,
+  })
+  table.insert(graphics, {
+    Type = "Header",
+    Text = "Publish",
+    Position = { 35, 140 },
+    Size = { 330, 16 },
+    Color = Black,
+    FontSize = 14,
+  })
+  table.insert(graphics, {
+    Type = "Header",
+    Text = "Subscribe",
+    Position = { 35, 335 },
+    Size = { 330, 16 },
+    Color = Black,
+    FontSize = 14,
+  })
+  local rows = {
+    { "PublishTopic", "Topic", "Text", 165 },
+    { "PublishPayload", "Payload", "Text", 190 },
+    { "PublishQos", "QoS", "ComboBox", 215 },
+    { "PublishRetain", "Retain", "Button", 240 },
+    { "Publish", "Publish message", "Button", 265 },
+    { "PublishResult", "Publish result", "Text", 290, true },
+    { "SubscribeFilter", "Topic filter", "Text", 360 },
+    { "SubscribeQos", "Requested QoS", "ComboBox", 385 },
+    { "Subscribed", "Subscribed", "Led", 410 },
+    { "SubscriptionResult", "Subscription result", "Text", 435, true },
+    { "ReceivedTopic", "Received topic", "Text", 460, true },
+    { "ReceivedPayload", "Received payload", "Text", 485, true },
+    { "ReceivedFormat", "Payload format", "Text", 510, true },
+    { "ReceivedValid", "Received value valid", "Led", 535 },
+    { "MessageCount", "Message count", "Text", 560, true },
+    { "MessageReceived", "Message event", "Button", 585, true },
+  }
+  for _, row in ipairs(rows) do
+    local base, label, style, y, readOnly = table.unpack(row)
+    local name = base .. channel
+    table.insert(graphics, {
+      Type = "Label",
+      Text = label,
+      Position = { 15, y },
+      Size = { 155, 20 },
+      Color = Black,
+      HTextAlign = "Right",
+      FontSize = 13,
+    })
+    layout[name] = {
+      Style = style,
+      Position = { 180, y },
+      Size = { 200, 20 },
+      PrettyName = "Channel " .. channel .. "~" .. label,
+      FontSize = 13,
+    }
+    if readOnly then
+      layout[name].IsReadOnly = true
+    end
+    if style == "Button" then
+      layout[name].ButtonStyle = base == "PublishRetain" and "Toggle" or "Trigger"
+      layout[name].Size = { 45, 20 }
+      layout[name].Color = White
+      layout[name].CornerRadius = 2
+      layout[name].Margin = 2
+    elseif style == "Led" then
+      layout[name].Color = IndicatorGreen
+      layout[name].Size = { 20, 20 }
+    elseif readOnly then
+      layout[name].Color = ReadoutGray
+    end
+  end
+end
+
+function GetControlLayout(props)
+  local page = props.page_index.Value
+  local certificatePage = page == props.Channels.Value + 2
+  local height = page == 1 and 755 or (certificatePage and 475 or 640)
+  local layout = {}
+  local graphics = {
+    {
+      Type = "GroupBox",
+      Position = { 0, 0 },
+      Size = { 400, height },
+      Fill = White,
+      StrokeWidth = 0,
+    },
+    {
+      Type = "GroupBox",
+      Position = { 0, 0 },
+      Size = { 400, 100 },
+      Fill = PanelGray,
+      StrokeWidth = 0,
+    },
+  }
+  -- Populate hidden controls using the SAME page functions, retaining stable pin names.
+  SetupLayout(layout, {})
+  CertificateLayout(layout, {})
+  for channel = 1, props.Channels.Value do
+    ChannelLayout(layout, {}, channel)
+  end
+  -- Button-specific fields can make hidden controls appear in Designer 10.5.
+  for name, item in pairs(layout) do
+    layout[name] = {
+      Style = "None",
+      Position = item.Position,
+      Size = item.Size,
+      PrettyName = item.PrettyName,
+    }
+  end
+  if page == 1 then
+    SetupLayout(layout, graphics)
+  elseif certificatePage then
+    CertificateLayout(layout, graphics)
+  else
+    ChannelLayout(layout, graphics, page - 1)
+  end
+  table.insert(graphics, {
+    Type = "Svg",
+    Image = MqttLogo,
+    Position = { 12.5, 25 / 11 },
+    Size = { 375, 1050 / 11 },
+  })
+  table.insert(graphics, {
+    Type = "Label",
+    Text = page == 1 and "Setup"
+      or (certificatePage and "Certificates" or "Channel " .. (page - 1)),
+    Position = { 7, 106 },
+    Size = { 380, 22 },
+    Color = Black,
+    FontSize = 20,
+    FontStyle = "Medium",
+    HTextAlign = "Left",
+  })
+  table.insert(graphics, {
+    Type = "Label",
+    Text = "Version " .. PluginInfo.Version,
+    Position = { 205, height - 22 },
+    Size = { 180, 16 },
+    Color = Black,
+    FontSize = 10,
+    HTextAlign = "Right",
+  })
+  for index, item in ipairs(graphics) do
+    item.ZOrder = index
+    item.Font = "Roboto"
+    if item.Type == "Header" then
+      item.HTextAlign = "Center"
+    end
+  end
+  local order = 1000
+  for _, definition in ipairs(GetControls(props)) do
+    local item = layout[definition.Name]
+    item.ZOrder = order
+    order = order + 1
+  end
+  return layout, graphics
+end
+
+--*** Runtime ***
+if Controls then
+  Mqtt = (function()
+-- Generated by examples/mqtt/build.py; edit src/ and rebuild.
+-- luamqtt 3.5.0 codecs at 14ad9be4c327972be68726d3c796c781eb4cc542
+--[[
+MIT License
+
+Copyright (c) 2018 Alexander Kiranov
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+]]
+local Loaders = {}
+local Loaded = {}
+local function Require(name)
+  if Loaded[name] then return Loaded[name] end
+  if not Loaders[name] then return require(name) end
+  Loaded[name] = Loaders[name]()
+  return Loaded[name]
+end
+Loaders["mqtt.const"] = function()
+local require = Require
+--- MQTT const module
+
+--- Module table
+-- @tfield number v311 MQTT v3.1.1 protocol version constant
+-- @tfield number v50  MQTT v5.0   protocol version constant
+-- @tfield string _VERSION luamqtt library version string
+-- @table const
+local const = {
+	-- supported MQTT protocol versions
+	v311 = 4,		-- supported protocol version, MQTT v3.1.1
+	v50 = 5,		-- supported protocol version, MQTT v5.0
+
+	-- luamqtt library version string
+	_VERSION = "3.5.0",
+}
+
+return const
+
+-- vim: ts=4 sts=4 sw=4 noet ft=lua
+
+end
+Loaders["mqtt.bit53"] = function()
+local require = Require
+-- implementing some functions from BitOp (http://bitop.luajit.org/) on Lua 5.3
+
+return {
+	lshift = function(x, n)
+		return x << n
+	end,
+	rshift = function(x, n)
+		return x >> n
+	end,
+	bor = function(x1, x2)
+		return x1 | x2
+	end,
+	band = function(x1, x2)
+		return x1 & x2
+	end,
+}
+
+-- vim: ts=4 sts=4 sw=4 noet ft=lua
+
+end
+Loaders["mqtt.bitwrap"] = function()
+local require = Require
+-- wrapper around BitOp module
+
+-- luacheck: globals jit
+if _VERSION == "Lua 5.1" or type(jit) == "table" then -- Lua 5.1 or LuaJIT (based on Lua 5.1)
+	return require("bit") -- custom module https://luarocks.org/modules/luarocks/luabitop
+elseif _VERSION == "Lua 5.2" then
+	return require("bit32") -- standard Lua 5.2 module
+else
+	return require("mqtt.bit53")
+end
+
+-- vim: ts=4 sts=4 sw=4 noet ft=lua
+
+end
+Loaders["mqtt.tools"] = function()
+local require = Require
+-- module table
+local tools = {}
+
+-- load required stuff
+local require = require
+
+local string = require("string")
+local str_format = string.format
+local str_byte = string.byte
+
+local table = require("table")
+local tbl_concat = table.concat
+local tbl_sort = table.sort
+
+local type = type
+local error = error
+local pairs = pairs
+
+local math = require("math")
+local math_floor = math.floor
+
+
+-- Returns string encoded as HEX
+function tools.hex(str)
+	local res = {}
+	for i = 1, #str do
+		res[i] = str_format("%02X", str_byte(str, i))
+	end
+	return tbl_concat(res)
+end
+
+-- Integer division function
+function tools.div(x, y)
+	return math_floor(x / y)
+end
+
+-- table.sort callback for tools.sortedpairs()
+local function sortedpairs_compare(a, b)
+	local a_type = type(a)
+	local b_type = type(b)
+	if (a_type == "string" and b_type == "string") or (a_type == "number" and b_type == "number") then
+		return a < b
+	elseif a_type == "number" then
+		return true
+	elseif b_type == "number" then
+		return false
+	else
+		error("sortedpairs failed to make a stable keys comparison of types "..a_type.." and "..b_type)
+	end
+end
+
+-- Iterate through table keys and values in stable (sorted) order
+function tools.sortedpairs(tbl)
+	local keys = {}
+	for k in pairs(tbl) do
+		local k_type = type(k)
+		if k_type ~= "string" and k_type ~= "number" then
+			error("sortedpairs failed to make a stable iteration order for key of type "..type(k))
+		end
+		keys[#keys + 1] = k
+	end
+	tbl_sort(keys, sortedpairs_compare)
+	local i = 0
+	return function()
+		i = i + 1
+		local key = keys[i]
+		if key then
+			return key, tbl[key]
+		end
+	end
+end
+
+-- Converts multi-line string to a HEX string, removing all whitespace and line-comments started with "--"
+function tools.extract_hex(str)
+	local res = {}
+	-- iterate through lines
+	local n = 0
+	-- NOTE: in lua 5.5 the loop variable is read-only, so making a local copy to modify it below
+	for raw_line in str:gmatch("[^\n]+") do
+		local line = raw_line
+		n = n + 1
+		-- find a comment start
+		local comment_begin = line:find("--", 1, true)
+		if comment_begin then
+			-- remove comment from the line
+			line = line:sub(1, comment_begin - 1)
+		end
+		-- remove all whitespace from the line
+		line = line:gsub("%s", "")
+		-- check for the non-hex chars
+		local non_hex = line:find("[^0-9A-Fa-f]+")
+		if non_hex then
+			error(string.format("non-hex char '%s' at %s:%s", line:sub(non_hex, non_hex), n, non_hex))
+		end
+		-- append line to concat list
+		res[#res + 1] = line
+	end
+	-- finally concat all lines onto one HEX-string
+	local hexstr = tbl_concat(res)
+	if (#hexstr % 2) ~= 0 then
+		error("odd number of chars in the resulting HEX string")
+	end
+	return hexstr
+end
+
+-- export module table
+return tools
+
+-- vim: ts=4 sts=4 sw=4 noet ft=lua
+
+end
+Loaders["mqtt.protocol"] = function()
+local require = Require
+--- MQTT generic protocol components module
+-- @module mqtt.protocol
+
+--[[
+
+Here is a generic implementation of MQTT protocols of all supported versions.
+
+MQTT v3.1.1 documentation (DOCv3.1.1):
+	DOC[1]: http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/errata01/os/mqtt-v3.1.1-errata01-os-complete.html
+
+MQTT v5.0 documentation (DOCv5.0):
+	DOC[2]: http://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html
+
+CONVENTIONS:
+
+	* read_func - function to read data from some stream-like object (like network connection).
+		We are calling it with one argument: number of bytes to read.
+		Use currying/closures to pass other arguments to this function.
+		This function should return string of given size on success.
+		On failure it should return false/nil and an error message.
+
+]]
+
+-- module table
+local protocol = {}
+
+-- load required stuff
+local type = type
+local error = error
+local assert = assert
+local require = require
+local _VERSION = _VERSION -- lua interpreter version, not a mqtt._VERSION
+local tostring = tostring
+local setmetatable = setmetatable
+
+
+local table = require("table")
+local tbl_concat = table.concat
+local unpack = unpack or table.unpack
+
+local string = require("string")
+local str_sub = string.sub
+local str_char = string.char
+local str_byte = string.byte
+local str_format = string.format
+
+local const = require("mqtt.const")
+local const_v311 = const.v311
+local const_v50 = const.v50
+
+local bit = require("mqtt.bitwrap")
+local bor = bit.bor
+local band = bit.band
+local lshift = bit.lshift
+local rshift = bit.rshift
+
+local tools = require("mqtt.tools")
+local div = tools.div
+local sortedpairs = tools.sortedpairs
+
+--- Create bytes of the uint8 value
+-- @tparam number val - integer value to convert to bytes
+-- @treturn string bytes of the value
+function protocol.make_uint8(val)
+	if val < 0 or val > 0xFF then
+		error("value is out of range to encode as uint8: "..tostring(val))
+	end
+	return str_char(val)
+end
+local make_uint8 = protocol.make_uint8
+
+--- Create bytes of the uint16 value
+-- @tparam number val - integer value to convert to bytes
+-- @treturn string bytes of the value
+function protocol.make_uint16(val)
+	if val < 0 or val > 0xFFFF then
+		error("value is out of range to encode as uint16: "..tostring(val))
+	end
+	return str_char(rshift(val, 8), band(val, 0xFF))
+end
+local make_uint16 = protocol.make_uint16
+
+--- Create bytes of the uint32 value
+-- @tparam number val - integer value to convert to bytes
+-- @treturn string bytes of the value
+function protocol.make_uint32(val)
+	if val < 0 or val > 0xFFFFFFFF then
+		error("value is out of range to encode as uint32: "..tostring(val))
+	end
+	return str_char(rshift(val, 24), band(rshift(val, 16), 0xFF), band(rshift(val, 8), 0xFF), band(val, 0xFF))
+end
+
+--- Create bytes of the UTF-8 string value according to the MQTT spec.
+-- Basically it's the same string with its length prefixed as uint16 value.
+-- For MQTT v3.1.1:	<b>1.5.3 UTF-8 encoded strings</b>,
+-- For MQTT v5.0:	<b>1.5.4 UTF-8 Encoded String</b>.
+-- @tparam string str - string value to convert to bytes
+-- @treturn string bytes of the value
+function protocol.make_string(str)
+	return make_uint16(str:len())..str
+end
+
+--- Maximum integer value (268435455) that can be encoded using variable-length encoding
+protocol.max_variable_length = 268435455
+local max_variable_length = protocol.max_variable_length
+
+--- Create bytes of the integer value encoded as variable length field
+-- For MQTT v3.1.1:	<b>2.2.3 Remaining Length</b>,
+-- For MQTT v5.0:	<b>2.1.4 Remaining Length</b>.
+-- @tparam number len - integer value to be encoded
+-- @treturn string bytes of the value
+function protocol.make_var_length(len)
+	if len < 0 or len > max_variable_length then
+		error("value is invalid for encoding as variable length field: "..tostring(len))
+	end
+	local bytes = {}
+	local i = 1
+	repeat
+		local byte = len % 128
+		len = div(len, 128)
+		if len > 0 then
+			byte = bor(byte, 128)
+		end
+		bytes[i] = byte
+		i = i + 1
+	until len <= 0
+	return unpack(bytes)
+end
+local make_var_length = protocol.make_var_length
+
+--- Make bytes for 1-byte value with only 0 or 1 value allowed
+-- @tparam number value - integer value to convert to bytes
+-- @treturn string bytes of the value
+function protocol.make_uint8_0_or_1(value)
+	if value ~= 0 and value ~= 1 then
+		error("expecting 0 or 1 as value")
+	end
+	return make_uint8(value)
+end
+
+--- Make bytes for 2-byte value with nonzero check
+-- @tparam number value - integer value to convert to bytes
+-- @treturn string bytes of the value
+function protocol.make_uint16_nonzero(value)
+	if value == 0 then
+		error("expecting nonzero value")
+	end
+	return make_uint16(value)
+end
+
+--- Make bytes for variable length value with nonzero value check
+-- @tparam number value - integer value to convert to bytes
+-- @treturn string bytes of the value
+function protocol.make_var_length_nonzero(value)
+	if value == 0 then
+		error("expecting nonzero value")
+	end
+	return make_var_length(value)
+end
+
+--- Read string (or bytes) using given read_func function
+-- @tparam function read_func - function to read some bytes from the network layer
+-- @treturn string parsed string (or bytes) on success
+-- @return OR false and error message on failure
+function protocol.parse_string(read_func)
+	assert(type(read_func) == "function", "expecting read_func to be a function")
+	local len, err = read_func(2)
+	if not len then
+		return false, "failed to read string length: "..err
+	end
+	-- convert string length from 2 bytes
+	local byte1, byte2 = str_byte(len, 1, 2)
+	len = bor(lshift(byte1, 8), byte2)
+	-- and return string/bytes of the parsed length
+	return read_func(len)
+end
+local parse_string = protocol.parse_string
+
+--- Parse uint8 value using given read_func
+-- @tparam function read_func - function to read some bytes from the network layer
+-- @treturn number parser value
+-- @return OR false and error message on failure
+function protocol.parse_uint8(read_func)
+	assert(type(read_func) == "function", "expecting read_func to be a function")
+	local value, err = read_func(1)
+	if not value then
+		return false, "failed to read 1 byte for uint8: "..err
+	end
+	return str_byte(value, 1, 1)
+end
+local parse_uint8 = protocol.parse_uint8
+
+--- Parse uint8 value using given read_func with only 0 or 1 value allowed
+-- @tparam function read_func - function to read some bytes from the network layer
+-- @treturn number parser value
+-- @return OR false and error message on failure
+function protocol.parse_uint8_0_or_1(read_func)
+	local value, err = parse_uint8(read_func)
+	if not value then
+		return false, err
+	end
+	if value ~= 0 and value ~= 1 then
+		return false, "expecting only 0 or 1 but got: "..value
+	end
+	return value
+end
+
+--- Parse uint16 value using given read_func
+-- @tparam function read_func - function to read some bytes from the network layer
+-- @treturn number parser value
+-- @return OR false and error message on failure
+function protocol.parse_uint16(read_func)
+	assert(type(read_func) == "function", "expecting read_func to be a function")
+	local value, err = read_func(2)
+	if not value then
+		return false, "failed to read 2 byte for uint16: "..err
+	end
+	local byte1, byte2 = str_byte(value, 1, 2)
+	return lshift(byte1, 8) + byte2
+end
+local parse_uint16 = protocol.parse_uint16
+
+--- Parse uint16 non-zero value using given read_func
+-- @tparam function read_func - function to read some bytes from the network layer
+-- @treturn number parser value
+-- @return OR false and error message on failure
+function protocol.parse_uint16_nonzero(read_func)
+	local value, err = parse_uint16(read_func)
+	if not value then
+		return false, err
+	end
+	if value == 0 then
+		return false, "expecting non-zero value"
+	end
+	return value
+end
+
+--- Parse uint32 value using given read_func
+-- @tparam function read_func - function to read some bytes from the network layer
+-- @treturn number parser value
+-- @return OR false and error message on failure
+function protocol.parse_uint32(read_func)
+	assert(type(read_func) == "function", "expecting read_func to be a function")
+	local value, err = read_func(4)
+	if not value then
+		return false, "failed to read 4 byte for uint32: "..err
+	end
+	local byte1, byte2, byte3, byte4 = str_byte(value, 1, 4)
+	if _VERSION < "Lua 5.3" then
+		return byte1 * (2 ^ 24) + lshift(byte2, 16) + lshift(byte3, 8) + byte4
+	else
+		return lshift(byte1, 24) + lshift(byte2, 16) + lshift(byte3, 8) + byte4
+	end
+end
+
+-- Max multiplier of the variable length integer value
+local max_mult = 128 * 128 * 128
+
+--- Parse variable length field value using given read_func.
+-- For MQTT v3.1.1:	<b>2.2.3 Remaining Length</b>,
+-- For MQTT v5.0:	<b>2.1.4 Remaining Length</b>.
+-- @tparam function read_func - function to read some bytes from the network layer
+-- @treturn number parser value
+-- @return OR false and error message on failure
+function protocol.parse_var_length(read_func)
+	-- DOC[1]: 2.2.3 Remaining Length
+	-- DOC[2]: 1.5.5 Variable Byte Integer
+	assert(type(read_func) == "function", "expecting read_func to be a function")
+	local mult = 1
+	local val = 0
+	repeat
+		local byte, err = read_func(1)
+		if not byte then
+			return false, err
+		end
+		byte = str_byte(byte, 1, 1)
+		val = val + band(byte, 127) * mult
+		if mult > max_mult then
+			return false, "malformed variable length field data"
+		end
+		mult = mult * 128
+	until band(byte, 128) == 0
+	return val
+end
+local parse_var_length = protocol.parse_var_length
+
+--- Parse variable length field value using given read_func with non-zero constraint.
+-- For MQTT v3.1.1:	<b>2.2.3 Remaining Length</b>,
+-- For MQTT v5.0:	<b>2.1.4 Remaining Length</b>.
+-- @tparam function read_func - function to read some bytes from the network layer
+-- @treturn number parser value
+-- @return OR false and error message on failure
+function protocol.parse_var_length_nonzero(read_func)
+	local value, err = parse_var_length(read_func)
+	if not value then
+		return false, err
+	end
+	if value == 0 then
+		return false, "expecting non-zero value"
+	end
+	return value
+end
+
+--- Create bytes of the MQTT fixed packet header
+-- For MQTT v3.1.1:	<b>2.2 Fixed header</b>,
+-- For MQTT v5.0:	<b>2.1.1 Fixed Header</b>.
+-- @tparam number ptype - MQTT packet type
+-- @tparam number flags - MQTT packet flags
+-- @tparam number len - MQTT packet length
+-- @treturn string bytes of the fixed packet header
+function protocol.make_header(ptype, flags, len)
+	local byte1 = bor(lshift(ptype, 4), band(flags, 0x0F))
+	return str_char(byte1, make_var_length(len))
+end
+
+--- Check if given value is a valid PUBLISH message QoS value
+-- @tparam number val - QoS value
+-- @treturn boolean true for valid QoS value, otherwise false
+function protocol.check_qos(val)
+	return (val == 0) or (val == 1) or (val == 2)
+end
+
+--- Check if given value is a valid Packet Identifier
+-- For MQTT v3.1.1:	<b>2.3.1 Packet Identifier</b>,
+-- For MQTT v5.0:	<b>2.2.1 Packet Identifier</b>.
+-- @tparam number val - Packet ID value
+-- @treturn boolean true for valid Packet ID value, otherwise false
+function protocol.check_packet_id(val)
+	return val >= 1 and val <= 0xFFFF
+end
+
+--- Returns the next Packet Identifier value relative to given current value.
+-- If current is nil - returns 1 as the first possible Packet ID.
+-- For MQTT v3.1.1:	<b>2.3.1 Packet Identifier</b>,
+-- For MQTT v5.0:	<b>2.2.1 Packet Identifier</b>.
+-- @tparam[opt] number curr - current Packet ID value
+-- @treturn number next Packet ID value
+function protocol.next_packet_id(curr)
+	if not curr then
+		return 1
+	end
+	assert(type(curr) == "number", "expecting curr to be a number")
+	assert(curr >= 1, "expecting curr to be >= 1")
+	curr = curr + 1
+	if curr > 0xFFFF then
+		curr = 1
+	end
+	return curr
+end
+
+--- MQTT protocol fixed header packet types.
+-- For MQTT v3.1.1:	<b>2.2.1 MQTT Control Packet type</b>,
+-- For MQTT v5.0:	<b>2.1.2 MQTT Control Packet type</b>.
+protocol.packet_type = {
+	CONNECT = 			1, 					-- 1
+	CONNACK = 			2, 					-- 2
+	PUBLISH = 			3, 					-- 3
+	PUBACK = 			4, 					-- 4
+	PUBREC = 			5, 					-- 5
+	PUBREL = 			6, 					-- 6
+	PUBCOMP = 			7, 					-- 7
+	SUBSCRIBE = 		8, 					-- 8
+	SUBACK = 			9, 					-- 9
+	UNSUBSCRIBE = 		10, 				-- 10
+	UNSUBACK = 			11, 				-- 11
+	PINGREQ = 			12, 				-- 12
+	PINGRESP = 			13, 				-- 13
+	DISCONNECT = 		14, 				-- 14
+	AUTH =				15, 				-- 15
+	[1] = 				"CONNECT", 			-- "CONNECT"
+	[2] = 				"CONNACK", 			-- "CONNACK"
+	[3] = 				"PUBLISH", 			-- "PUBLISH"
+	[4] = 				"PUBACK", 			-- "PUBACK"
+	[5] = 				"PUBREC", 			-- "PUBREC"
+	[6] = 				"PUBREL", 			-- "PUBREL"
+	[7] = 				"PUBCOMP", 			-- "PUBCOMP"
+	[8] = 				"SUBSCRIBE", 		-- "SUBSCRIBE"
+	[9] = 				"SUBACK", 			-- "SUBACK"
+	[10] = 				"UNSUBSCRIBE", 		-- "UNSUBSCRIBE"
+	[11] = 				"UNSUBACK", 		-- "UNSUBACK"
+	[12] = 				"PINGREQ", 			-- "PINGREQ"
+	[13] = 				"PINGRESP", 		-- "PINGRESP"
+	[14] = 				"DISCONNECT", 		-- "DISCONNECT"
+	[15] =				"AUTH", 			-- "AUTH"
+}
+local packet_type = protocol.packet_type
+
+-- Packet types requiring packet identifier field
+-- DOCv3.1.1: 2.3.1 Packet Identifier
+-- DOCv5.0: 2.2.1 Packet Identifier
+local packets_requiring_packet_id = {
+	[packet_type.PUBACK] 		= true,
+	[packet_type.PUBREC] 		= true,
+	[packet_type.PUBREL] 		= true,
+	[packet_type.PUBCOMP] 		= true,
+	[packet_type.SUBSCRIBE] 	= true,
+	[packet_type.SUBACK] 		= true,
+	[packet_type.UNSUBSCRIBE] 	= true,
+	[packet_type.UNSUBACK] 		= true,
+}
+
+-- CONNACK return code/reason code strings
+protocol.connack_rc = {
+	-- MQTT v3.1.1 Connect return codes, DOCv3.1.1: 3.2.2.3 Connect Return code
+	[0] = "Connection Accepted",
+	[1] = "Connection Refused, unacceptable protocol version",
+	[2] = "Connection Refused, identifier rejected",
+	[3] = "Connection Refused, Server unavailable",
+	[4] = "Connection Refused, bad user name or password",
+	[5] = "Connection Refused, not authorized",
+
+	-- MQTT v5.0 Connect reason codes, DOCv5.0: 3.2.2.2 Connect Reason Code
+	[0x80] = "Unspecified error",
+	[0x81] = "Malformed Packet",
+	[0x82] = "Protocol Error",
+	[0x83] = "Implementation specific error",
+	[0x84] = "Unsupported Protocol Version",
+	[0x85] = "Client Identifier not valid",
+	[0x86] = "Bad User Name or Password",
+	[0x87] = "Not authorized",
+	[0x88] = "Server unavailable",
+	[0x89] = "Server busy",
+	[0x8A] = "Banned",
+	[0x8C] = "Bad authentication method",
+	[0x90] = "Topic Name invalid",
+	[0x95] = "Packet too large",
+	[0x97] = "Quota exceeded",
+	[0x99] = "Payload format invalid",
+	[0x9A] = "Retain not supported",
+	[0x9B] = "QoS not supported",
+	[0x9C] = "Use another server",
+	[0x9D] = "Server moved",
+	[0x9F] = "Connection rate exceeded",
+}
+local connack_rc = protocol.connack_rc
+
+--- Check if Packet Identifier field are required for given packet
+-- @tparam table args - args for creating packet
+-- @treturn boolean true if Packet Identifier are required for the packet
+function protocol.packet_id_required(args)
+	assert(type(args) == "table", "expecting args to be a table")
+	assert(type(args.type) == "number", "expecting .type to be a number")
+	local ptype = args.type
+	if ptype == packet_type.PUBLISH and args.qos and args.qos > 0 then
+		return true
+	end
+	return packets_requiring_packet_id[ptype]
+end
+
+-- Metatable for combined data packet, should looks like a string
+local combined_packet_mt = {
+	-- Convert combined data packet to string
+	__tostring = function(self)
+		local strings = {}
+		for i, part in ipairs(self) do
+			strings[i] = tostring(part)
+		end
+		return tbl_concat(strings)
+	end,
+
+	-- Get length of combined data packet
+	len = function(self)
+		local len = 0
+		for _, part in ipairs(self) do
+			len = len + part:len()
+		end
+		return len
+	end,
+
+	-- Append part to the end of combined data packet
+	append = function(self, part)
+		self[#self + 1] = part
+	end
+}
+
+-- Make combined_packet_mt table works like a class
+combined_packet_mt.__index = function(_, key)
+	return combined_packet_mt[key]
+end
+
+--- Combine several data parts into one
+-- @tparam combined_packet_mt/string ... any amount of strings of combined_packet_mt tables to combine into one packet
+-- @treturn combined_packet_mt table suitable to append packet parts or to stringify it into raw packet bytes
+function protocol.combine(...)
+	return setmetatable({...}, combined_packet_mt)
+end
+
+-- Convert any value to string, respecting strings and tables
+local function value_tostring(value)
+	local t = type(value)
+	if t == "string" then
+		return str_format("%q", value)
+	elseif t == "table" then
+		local res = {}
+		for k, v in sortedpairs(value) do
+			if type(k) == "number" then
+				res[#res + 1] = value_tostring(v)
+			else
+				if k:match("^[a-zA-Z_][_%w]*$") then
+					res[#res + 1] = str_format("%s=%s", k, value_tostring(v))
+				else
+					res[#res + 1] = str_format("[%q]=%s", k, value_tostring(v))
+				end
+			end
+		end
+		return str_format("{%s}", tbl_concat(res, ", "))
+	else
+		return tostring(value)
+	end
+end
+
+--- Render packet to string representation
+-- @tparam packet_mt packet table to convert to string
+-- @treturn string human-readable string representation of the packet
+function protocol.packet_tostring(packet)
+	local res = {}
+	for k, v in sortedpairs(packet) do
+		res[#res + 1] = str_format("%s=%s", k, value_tostring(v))
+	end
+	return str_format("%s{%s}", tostring(packet_type[packet.type]), tbl_concat(res, ", "))
+end
+local packet_tostring = protocol.packet_tostring
+
+--- Parsed packet metatable
+protocol.packet_mt = {
+	__tostring = packet_tostring, -- packet-to-human-readable-string conversion metamethod using protocol.packet_tostring()
+}
+
+--- Parsed CONNACK packet metatable
+protocol.connack_packet_mt = {
+	__tostring = packet_tostring, -- packet-to-human-readable-string conversion metamethod using protocol.packet_tostring()
+	reason_string = function(self) -- Returns reason string for the CONNACK packet according to its rc field
+		local reason_string = connack_rc[self.rc]
+		if not reason_string then
+			reason_string = "Unknown: "..self.rc
+		end
+		return reason_string
+	end,
+}
+protocol.connack_packet_mt.__index = protocol.connack_packet_mt
+
+
+--- Start parsing a new packet
+-- @tparam function read_func - function to read data from the network connection
+-- @treturn number packet_type
+-- @treturn number flags
+-- @treturn table input - a table with fields "read_func" and "available" representing a stream-like object
+-- to read already received packet data in chunks
+-- @return OR false and error_message on failure
+function protocol.start_parse_packet(read_func)
+	assert(type(read_func) == "function", "expecting read_func to be a function")
+	local byte1, err, len, data
+
+	-- parse fixed header
+	-- DOC[v3.1.1]: http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/errata01/os/mqtt-v3.1.1-errata01-os-complete.html#_Toc442180832
+	-- DOC[v5.0]: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901020
+	byte1, err = read_func(1)
+	if not byte1 then
+		return false, "failed to read first byte: "..err
+	end
+	byte1 = str_byte(byte1, 1, 1)
+	local ptype = rshift(byte1, 4)
+	local flags = band(byte1, 0xF)
+	len, err = parse_var_length(read_func)
+	if not len then
+		return false, "failed to parse remaining length: "..err
+	end
+
+	-- create packet parser instance (aka input)
+	local input = {1, available = 0} -- input data offset and available size
+	if len > 0 then
+		data, err = read_func(len)
+	else
+		data = ""
+	end
+	if not data then
+		return false, "failed to read packet data: "..err
+	end
+	input.available = data:len()
+
+	-- read data function for the input instance
+	input.read_func = function(size)
+		if size > input.available then
+			return false, "not enough data to read size: "..size
+		end
+		local off = input[1]
+		local res = str_sub(data, off, off + size - 1)
+		input[1] = off + size
+		input.available = input.available - size
+		return res
+	end
+
+	return ptype, flags, input
+end
+
+--- Parse CONNECT packet with read_func
+-- @tparam function read_func - function to read data from the network connection
+-- @tparam[opt] number version - expected protocol version constant or nil to accept both versions
+-- @return packet on success or false and error message on failure
+function protocol.parse_packet_connect(read_func, version)
+	-- DOC[v3.1.1]: 3.1 CONNECT – Client requests a connection to a Server
+	-- DOC[v5.0]: 3.1 CONNECT – Connection Request
+	local ptype, flags, input = protocol.start_parse_packet(read_func)
+	if ptype ~= packet_type.CONNECT then
+		return false, "expecting CONNECT (1) packet type but got "..ptype
+	end
+	if flags ~= 0 then
+		return false, "expecting CONNECT flags to be 0 but got "..flags
+	end
+	return protocol.parse_packet_connect_input(input, version)
+end
+
+--- Parse CONNECT packet from already received stream-like packet input table
+-- @tparam table input - a table with fields "read_func" and "available" representing a stream-like object
+-- @tparam[opt] number version - expected protocol version constant or nil to accept both versions
+-- @return packet on success or false and error message on failure
+function protocol.parse_packet_connect_input(input, version)
+	-- DOC[v3.1.1]: 3.1 CONNECT – Client requests a connection to a Server
+	-- DOC[v5.0]: 3.1 CONNECT – Connection Request
+	local read_func = input.read_func
+	local err, protocol_name, protocol_ver, connect_flags, keep_alive
+
+	-- DOC: 3.1.2.1 Protocol Name
+	protocol_name, err = parse_string(read_func)
+	if not protocol_name then
+		return false, "failed to parse protocol name: "..err
+	end
+	if protocol_name ~= "MQTT" then
+		return false, "expecting 'MQTT' as protocol name but received '"..protocol_name.."'"
+	end
+
+	-- DOC[v3.1.1]: 3.1.2.2 Protocol Level
+	-- DOC[v5.0]: 3.1.2.2 Protocol Version
+	protocol_ver, err = parse_uint8(read_func)
+	if not protocol_ver then
+		return false, "failed to parse protocol level/version: "..err
+	end
+	if version ~= nil and version ~= protocol_ver then
+		return false, "expecting protocol version "..version.." but received "..protocol_ver
+	end
+
+	-- DOC: 3.1.2.3 Connect Flags
+	connect_flags, err = parse_uint8(read_func)
+	if not connect_flags then
+		return false, "failed to parse connect flags: "..err
+	end
+	if band(connect_flags, 0x1) ~= 0 then
+		return false, "reserved 1st bit in connect flags are set"
+	end
+	local clean = (band(connect_flags, 0x2) ~= 0)
+	local will = (band(connect_flags, 0x4) ~= 0)
+	local will_qos = band(rshift(connect_flags, 3), 0x3)
+	local will_retain = (band(connect_flags, 0x20) ~= 0)
+	local password_flag = (band(connect_flags, 0x40) ~= 0)
+	local username_flag = (band(connect_flags, 0x80) ~= 0)
+
+	-- DOC: 3.1.2.10 Keep Alive
+	keep_alive, err = parse_uint16(read_func)
+	if not keep_alive then
+		return false, "failed to parse keep alive field: "..err
+	end
+
+	-- continue parsing based on the protocol_ver
+
+	-- preparing common connect packet fields
+	local packet = {
+		type = packet_type.CONNECT,
+		version = protocol_ver,
+		clean = clean,
+		password = password_flag, -- NOTE: will be replaced
+		username = username_flag, -- NOTE: will be replaced
+		keep_alive = keep_alive,
+	}
+	if will then
+		packet.will = {
+			qos = will_qos,
+			retain = will_retain,
+			topic = "", -- NOTE: will be replaced
+			payload = "", -- NOTE: will be replaced
+		}
+	end
+	if protocol_ver == const_v311 then
+		return require("mqtt.protocol4")._parse_packet_connect_continue(input, packet)
+	elseif protocol_ver == const_v50 then
+		return require("mqtt.protocol5")._parse_packet_connect_continue(input, packet)
+	else
+		return false, "unexpected protocol version to continue parsing: "..protocol_ver
+	end
+end
+
+-- export module table
+return protocol
+
+-- vim: ts=4 sts=4 sw=4 noet ft=lua
+
+end
+Loaders["mqtt.protocol4"] = function()
+local require = Require
+--[[
+
+Here is a MQTT v3.1.1 protocol implementation
+
+MQTT v3.1.1 documentation (DOC):
+	http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/errata01/os/mqtt-v3.1.1-errata01-os-complete.html
+
+]]
+
+-- module table
+local protocol4 = {}
+
+-- load required stuff
+local type = type
+local error = error
+local assert = assert
+local require = require
+local tostring = tostring
+local setmetatable = setmetatable
+
+local const = require("mqtt.const")
+local const_v311 = const.v311
+
+local bit = require("mqtt.bitwrap")
+local bor = bit.bor
+local band = bit.band
+local lshift = bit.lshift
+local rshift = bit.rshift
+
+local protocol = require("mqtt.protocol")
+local make_uint8 = protocol.make_uint8
+local make_uint16 = protocol.make_uint16
+local make_string = protocol.make_string
+local make_header = protocol.make_header
+local check_qos = protocol.check_qos
+local check_packet_id = protocol.check_packet_id
+local combine = protocol.combine
+local packet_type = protocol.packet_type
+local packet_mt = protocol.packet_mt
+local connack_packet_mt = protocol.connack_packet_mt
+local start_parse_packet = protocol.start_parse_packet
+local parse_packet_connect_input = protocol.parse_packet_connect_input
+local parse_string = protocol.parse_string
+local parse_uint8 = protocol.parse_uint8
+local parse_uint16 = protocol.parse_uint16
+
+-- Create Connect Flags data, DOC: 3.1.2.3 Connect Flags
+local function make_connect_flags(args)
+	local byte = 0 -- bit 0 should be zero
+	-- DOC: 3.1.2.4 Clean Session
+	if args.clean ~= nil then
+		assert(type(args.clean) == "boolean", "expecting .clean to be a boolean")
+		if args.clean then
+			byte = bor(byte, lshift(1, 1))
+		end
+	end
+	-- DOC: 3.1.2.5 Will Flag
+	if args.will ~= nil then
+		-- check required args are presented
+		assert(type(args.will) == "table", "expecting .will to be a table")
+		assert(type(args.will.payload) == "string", "expecting .will.payload to be a string")
+		assert(type(args.will.topic) == "string", "expecting .will.topic to be a string")
+		if args.will.qos ~= nil then
+			assert(type(args.will.qos) == "number", "expecting .will.qos to be a number")
+			assert(check_qos(args.will.qos), "expecting .will.qos to be a valid QoS value")
+		end
+		if args.will.retain ~= nil then
+			assert(type(args.will.retain) == "boolean", "expecting .will.retain to be a boolean")
+		end
+		-- will flag should be set to 1
+		byte = bor(byte, lshift(1, 2))
+		-- DOC: 3.1.2.6 Will QoS
+		byte = bor(byte, lshift(args.will.qos or 0, 3))
+		-- DOC: 3.1.2.7 Will Retain
+		if args.will.retain then
+			byte = bor(byte, lshift(1, 5))
+		end
+	end
+	-- DOC: 3.1.2.8 User Name Flag
+	if args.username ~= nil then
+		assert(type(args.username) == "string", "expecting .username to be a string")
+		byte = bor(byte, lshift(1, 7))
+	end
+	-- DOC: 3.1.2.9 Password Flag
+	if args.password ~= nil then
+		assert(type(args.password) == "string", "expecting .password to be a string")
+		assert(args.username, "the .username is required to set .password")
+		byte = bor(byte, lshift(1, 6))
+	end
+	return make_uint8(byte)
+end
+
+-- Create CONNECT packet, DOC: 3.1 CONNECT – Client requests a connection to a Server
+local function make_packet_connect(args)
+	-- check args
+	assert(type(args.id) == "string", "expecting .id to be a string with MQTT client id")
+	-- DOC: 3.1.2.10 Keep Alive
+	local keep_alive_ival = 0
+	if args.keep_alive then
+		assert(type(args.keep_alive) == "number")
+		keep_alive_ival = args.keep_alive
+	end
+	-- DOC: 3.1.2 Variable header
+	local variable_header = combine(
+		make_string("MQTT"), 				-- DOC: 3.1.2.1 Protocol Name
+		make_uint8(4), 						-- DOC: 3.1.2.2 Protocol Level (4 is for MQTT v3.1.1)
+		make_connect_flags(args), 			-- DOC: 3.1.2.3 Connect Flags
+		make_uint16(keep_alive_ival) 		-- DOC: 3.1.2.10 Keep Alive
+	)
+	-- DOC: 3.1.3 Payload
+	-- DOC: 3.1.3.1 Client Identifier
+	local payload = combine(
+		make_string(args.id)
+	)
+	if args.will then
+		-- DOC: 3.1.3.2 Will Topic
+		assert(type(args.will.topic) == "string", "expecting will.topic to be a string")
+		payload:append(make_string(args.will.topic))
+		-- DOC: 3.1.3.3 Will Message
+		assert(args.will.payload == nil or type(args.will.payload) == "string", "expecting will.payload to be a string or nil")
+		payload:append(make_string(args.will.payload or ""))
+	end
+	if args.username then
+		-- DOC: 3.1.3.4 User Name
+		payload:append(make_string(args.username))
+		if args.password then
+			-- DOC: 3.1.3.5 Password
+			payload:append(make_string(args.password))
+		end
+	end
+	-- DOC: 3.1.1 Fixed header
+	local header = make_header(packet_type.CONNECT, 0, variable_header:len() + payload:len())
+	return combine(header, variable_header, payload)
+end
+
+-- Create CONNACK packet, DOC: 3.2 CONNACK – Acknowledge connection request
+local function make_packet_connack(args)
+	-- check args
+	assert(type(args.sp) == "boolean", "expecting .sp to be a boolean")
+	assert(type(args.rc) == "number", "expecting .rc to be a boolean")
+	-- DOC: 3.2.2.1 Connect Acknowledge Flags
+	-- DOC: 3.2.2.2 Session Present
+	local byte1
+	if args.sp then
+		byte1 = 1 -- bit 0 of the Connect Acknowledge Flags.
+	else
+		byte1 = 0
+	end
+	-- DOC: 3.2.2.3 Connect Return code
+	local byte2 = args.rc
+	-- DOC: 3.2.2 Variable header
+	local variable_header = combine(
+		make_uint8(byte1),
+		make_uint8(byte2)
+	)
+	-- DOC: 3.2.1 Fixed header
+	local header = make_header(packet_type.CONNACK, 0, variable_header:len()) -- NOTE: fixed flags value 0x0
+	return combine(header, variable_header)
+end
+
+-- Create PUBLISH packet, DOC: 3.3 PUBLISH – Publish message
+local function make_packet_publish(args)
+	-- check args
+	assert(type(args.topic) == "string", "expecting .topic to be a string")
+	if args.payload ~= nil then
+		assert(type(args.payload) == "string", "expecting .payload to be a string")
+	end
+	if args.qos ~= nil then
+		assert(type(args.qos) == "number", "expecting .qos to be a number")
+		assert(check_qos(args.qos), "expecting .qos to be a valid QoS value")
+	end
+	if args.retain ~= nil then
+		assert(type(args.retain) == "boolean", "expecting .retain to be a boolean")
+	end
+	if args.dup ~= nil then
+		assert(type(args.dup) == "boolean", "expecting .dup to be a boolean")
+	end
+	-- DOC: 3.3.1 Fixed header
+	local flags = 0
+	-- 3.3.1.3 RETAIN
+	if args.retain then
+		flags = bor(flags, 0x1)
+	end
+	-- DOC: 3.3.1.2 QoS
+	flags = bor(flags, lshift(args.qos or 0, 1))
+	-- DOC: 3.3.1.1 DUP
+	if args.dup then
+		flags = bor(flags, lshift(1, 3))
+	end
+	-- DOC: 3.3.2  Variable header
+	local variable_header = combine(
+		make_string(args.topic)
+	)
+	-- DOC: 3.3.2.2 Packet Identifier
+	if args.qos and args.qos > 0 then
+		assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+		assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+		variable_header:append(make_uint16(args.packet_id))
+	end
+	local payload
+	if args.payload then
+		payload = args.payload
+	else
+		payload = ""
+	end
+	-- DOC: 3.3.1 Fixed header
+	local header = make_header(packet_type.PUBLISH, flags, variable_header:len() + payload:len())
+	return combine(header, variable_header, payload)
+end
+
+-- Create PUBACK packet, DOC: 3.4 PUBACK – Publish acknowledgement
+local function make_packet_puback(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	-- DOC: 3.4.1 Fixed header
+	local header = make_header(packet_type.PUBACK, 0, 2)
+	-- DOC: 3.4.2 Variable header
+	local variable_header = make_uint16(args.packet_id)
+	return combine(header, variable_header)
+end
+
+-- Create PUBREC packet, DOC: 3.5 PUBREC – Publish received (QoS 2 publish received, part 1)
+local function make_packet_pubrec(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	-- DOC: 3.5.1 Fixed header
+	local header = make_header(packet_type.PUBREC, 0, 2)
+	-- DOC: 3.5.2 Variable header
+	local variable_header = make_uint16(args.packet_id)
+	return combine(header, variable_header)
+end
+
+-- Create PUBREL packet, DOC: 3.6 PUBREL – Publish release (QoS 2 publish received, part 2)
+local function make_packet_pubrel(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	-- DOC: 3.6.1 Fixed header
+	local header = make_header(packet_type.PUBREL, 0x2, 2) -- flags are 0x2 == 0010 bits (fixed value)
+	-- DOC: 3.6.2 Variable header
+	local variable_header = make_uint16(args.packet_id)
+	return combine(header, variable_header)
+end
+
+-- Create PUBCOMP packet, DOC: 3.7 PUBCOMP – Publish complete (QoS 2 publish received, part 3)
+local function make_packet_pubcomp(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	-- DOC: 3.7.1 Fixed header
+	local header = make_header(packet_type.PUBCOMP, 0, 2)
+	-- DOC: 3.7.2 Variable header
+	local variable_header = make_uint16(args.packet_id)
+	return combine(header, variable_header)
+end
+
+-- Create SUBSCRIBE packet, DOC: 3.8 SUBSCRIBE - Subscribe to topics
+local function make_packet_subscribe(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	assert(type(args.subscriptions) == "table", "expecting .subscriptions to be a table")
+	assert(#args.subscriptions > 0, "expecting .subscriptions to be a non-empty array")
+	-- DOC: 3.8.2 Variable header
+	local variable_header = combine(
+		make_uint16(args.packet_id)
+	)
+	-- DOC: 3.8.3 Payload
+	local payload = combine()
+	for i, subscription in ipairs(args.subscriptions) do
+		assert(type(subscription) == "table", "expecting .subscriptions["..i.."] to be a table")
+		assert(type(subscription.topic) == "string", "expecting .subscriptions["..i.."].topic to be a string")
+		if subscription.qos ~= nil then
+			assert(type(subscription.qos) == "number", "expecting .subscriptions["..i.."].qos to be a number")
+			assert(check_qos(subscription.qos), "expecting .subscriptions["..i.."].qos to be a valid QoS value")
+		end
+		payload:append(make_string(subscription.topic))
+		payload:append(make_uint8(subscription.qos or 0))
+	end
+	-- DOC: 3.8.1 Fixed header
+	local header = make_header(packet_type.SUBSCRIBE, 2, variable_header:len() + payload:len()) -- NOTE: fixed flags value 0x2
+	return combine(header, variable_header, payload)
+end
+
+-- Create SUBACK packet, DOC: 3.9 SUBACK – Subscribe acknowledgement
+local function make_packet_suback(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	assert(type(args.rc) == "table", "expecting .rc to be a table")
+	assert(#args.rc > 0, "expecting .rc to be a non-empty array")
+	-- DOC: 3.9.2 Variable header
+	local variable_header = combine(
+		make_uint16(args.packet_id)
+	)
+	-- DOC: 3.9.3 Payload
+	local payload = combine()
+	for i, rc in ipairs(args.rc) do
+		assert(type(rc) == "number", "expecting .rc["..i.."] to be a number")
+		assert(rc >= 0 and rc <= 255, "expecting .rc["..i.."] to be in range [0, 255]")
+		payload:append(make_uint8(rc))
+	end
+	-- DOC: 3.9.1 Fixed header
+	local header = make_header(packet_type.SUBACK, 0, variable_header:len() + payload:len()) -- NOTE: fixed flags value 0x0
+	return combine(header, variable_header, payload)
+end
+
+-- Create UNSUBSCRIBE packet, DOC: 3.10 UNSUBSCRIBE – Unsubscribe from topics
+local function make_packet_unsubscribe(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	assert(type(args.subscriptions) == "table", "expecting .subscriptions to be a table")
+	assert(#args.subscriptions > 0, "expecting .subscriptions to be a non-empty array")
+	-- DOC: 3.10.2 Variable header
+	local variable_header = combine(
+		make_uint16(args.packet_id)
+	)
+	-- DOC: 3.10.3 Payload
+	local payload = combine()
+	for i, subscription in ipairs(args.subscriptions) do
+		assert(type(subscription) == "string", "expecting .subscriptions["..i.."] to be a string")
+		payload:append(make_string(subscription))
+	end
+	-- DOC: 3.10.1 Fixed header
+	local header = make_header(packet_type.UNSUBSCRIBE, 2, variable_header:len() + payload:len()) -- NOTE: fixed flags value 0x2
+	return combine(header, variable_header, payload)
+end
+
+-- Create UNSUBACK packet, DOC: 3.11 UNSUBACK – Unsubscribe acknowledgement
+local function make_packet_unsuback(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	-- DOC: 3.11.2 Variable header
+	local variable_header = combine(
+		make_uint16(args.packet_id)
+	)
+	-- DOC: 3.11.3 Payload
+	-- The UNSUBACK Packet has no payload.
+	-- DOC: 3.11.1 Fixed header
+	local header = make_header(packet_type.UNSUBACK, 0, variable_header:len()) -- NOTE: fixed flags value 0x0
+	return combine(header, variable_header)
+end
+
+-- Create packet of given {type: number} in args
+function protocol4.make_packet(args)
+	assert(type(args) == "table", "expecting args to be a table")
+	assert(type(args.type) == "number", "expecting .type number in args")
+	local ptype = args.type
+	if ptype == packet_type.CONNECT then			-- 1
+		return make_packet_connect(args)
+	elseif ptype == packet_type.CONNACK then		-- 2
+		return make_packet_connack(args)
+	elseif ptype == packet_type.PUBLISH then		-- 3
+		return make_packet_publish(args)
+	elseif ptype == packet_type.PUBACK then			-- 4
+		return make_packet_puback(args)
+	elseif ptype == packet_type.PUBREC then			-- 5
+		return make_packet_pubrec(args)
+	elseif ptype == packet_type.PUBREL then			-- 6
+		return make_packet_pubrel(args)
+	elseif ptype == packet_type.PUBCOMP then		-- 7
+		return make_packet_pubcomp(args)
+	elseif ptype == packet_type.SUBSCRIBE then		-- 8
+		return make_packet_subscribe(args)
+	elseif ptype == packet_type.SUBACK then			-- 9
+		return make_packet_suback(args)
+	elseif ptype == packet_type.UNSUBSCRIBE then	-- 10
+		return make_packet_unsubscribe(args)
+	elseif ptype == packet_type.UNSUBACK then		-- 11
+		return make_packet_unsuback(args)
+	elseif ptype == packet_type.PINGREQ then		-- 12
+		-- DOC: 3.12 PINGREQ – PING request
+		return combine("\192\000") -- 192 == 0xC0, type == 12, flags == 0
+	elseif ptype == packet_type.PINGRESP then		-- 13
+		-- DOC: 3.13 PINGRESP – PING response
+		return combine("\208\000") -- 208 == 0xD0, type == 13, flags == 0
+	elseif ptype == packet_type.DISCONNECT then		-- 14
+		-- DOC: 3.14 DISCONNECT – Disconnect notification
+		return combine("\224\000") -- 224 == 0xD0, type == 14, flags == 0
+	else
+		error("unexpected protocol4 packet type to make: "..ptype)
+	end
+end
+
+-- Parse CONNACK packet, DOC: 3.2 CONNACK – Acknowledge connection request
+local function parse_packet_connack(ptype, flags, input)
+	-- DOC: 3.2.1 Fixed header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available ~= 2 then
+		return false, packet_type[ptype]..": expecting data of length 2 bytes"
+	end
+	local byte1, byte2 = parse_uint8(input.read_func), parse_uint8(input.read_func)
+	local sp = (band(byte1, 0x1) ~= 0)
+	return setmetatable({type=ptype, sp=sp, rc=byte2}, connack_packet_mt)
+end
+
+-- Parse PUBLISH packet, DOC: 3.3 PUBLISH – Publish message
+local function parse_packet_publish(ptype, flags, input)
+	-- DOC: 3.3.1.1 DUP
+	local dup = (band(flags, 0x8) ~= 0)
+	-- DOC: 3.3.1.2 QoS
+	local qos = band(rshift(flags, 1), 0x3)
+	-- DOC: 3.3.1.3 RETAIN
+	local retain = (band(flags, 0x1) ~= 0)
+	-- DOC: 3.3.2.1 Topic Name
+	if input.available < 2 then
+		return false, packet_type[ptype]..": expecting data of length at least 2 bytes"
+	end
+	local topic_len = parse_uint16(input.read_func)
+	if input.available < topic_len then
+		return false, packet_type[ptype]..": malformed packet: not enough data to parse topic"
+	end
+	local topic = input.read_func(topic_len)
+	-- DOC: 3.3.2.2 Packet Identifier
+	local packet_id
+	if qos > 0 then
+		-- DOC: 3.3.2.2 Packet Identifier
+		if input.available < 2 then
+			return false, packet_type[ptype]..": malformed packet: not enough data to parse packet_id"
+		end
+		packet_id = parse_uint16(input.read_func)
+	end
+	-- DOC: 3.3.3 Payload
+	local payload
+	if input.available > 0 then
+		payload = input.read_func(input.available)
+	end
+	return setmetatable({type=ptype, dup=dup, qos=qos, retain=retain, packet_id=packet_id, topic=topic, payload=payload}, packet_mt)
+end
+
+-- Parse PUBACK packet, DOC: 3.4 PUBACK – Publish acknowledgement
+local function parse_packet_puback(ptype, flags, input)
+	-- DOC: 3.4.1 Fixed header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available ~= 2 then
+		return false, packet_type[ptype]..": expecting data of length 2 bytes"
+	end
+	-- DOC: 3.4.2 Variable header
+	local packet_id = parse_uint16(input.read_func)
+	return setmetatable({type=ptype, packet_id=packet_id}, packet_mt)
+end
+
+-- Parse PUBREC packet, DOC: 3.5 PUBREC – Publish received (QoS 2 publish received, part 1)
+local function parse_packet_pubrec(ptype, flags, input)
+	-- DOC: 3.4.1 Fixed header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available ~= 2 then
+		return false, packet_type[ptype]..": expecting data of length 2 bytes"
+	end
+	-- DOC: 3.5.2 Variable header
+	local packet_id = parse_uint16(input.read_func)
+	return setmetatable({type=ptype, packet_id=packet_id}, packet_mt)
+end
+
+-- Parse PUBREL packet, DOC: 3.6 PUBREL – Publish release (QoS 2 publish received, part 2)
+local function parse_packet_pubrel(ptype, flags, input)
+	if flags ~= 2 then
+		-- DOC: The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.6.1-1].
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available ~= 2 then
+		return false, packet_type[ptype]..": expecting data of length 2 bytes"
+	end
+	-- DOC: 3.6.2 Variable header
+	local packet_id = parse_uint16(input.read_func)
+	return setmetatable({type=ptype, packet_id=packet_id}, packet_mt)
+end
+
+-- Parse PUBCOMP packet, DOC: 3.7 PUBCOMP – Publish complete (QoS 2 publish received, part 3)
+local function parse_packet_pubcomp(ptype, flags, input)
+	-- DOC: 3.7.1 Fixed header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available ~= 2 then
+		return false, packet_type[ptype]..": expecting data of length 2 bytes"
+	end
+	-- DOC: 3.7.2 Variable header
+	local packet_id = parse_uint16(input.read_func)
+	return setmetatable({type=ptype, packet_id=packet_id}, packet_mt)
+end
+
+-- Parse SUBSCRIBE packet, DOC: 3.8 SUBSCRIBE - Subscribe to topics
+local function parse_packet_subscribe(ptype, flags, input)
+	if flags ~= 2 then
+		-- DOC: The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.8.1-1].
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available < 5 then -- variable header (2) + payload: topic length (2) + qos (1)
+		-- DOC: The payload of a SUBSCRIBE packet MUST contain at least one Topic Filter / QoS pair. A SUBSCRIBE packet with no payload is a protocol violation [MQTT-3.8.3-3]
+		return false, packet_type[ptype]..": expecting data of length 5 bytes at least"
+	end
+	-- DOC: 3.8.2 Variable header
+	local packet_id = parse_uint16(input.read_func)
+	-- DOC: 3.8.3 Payload
+	local subscriptions = {}
+	while input.available > 0 do
+		local topic_filter, qos, err
+		topic_filter, err = parse_string(input.read_func)
+		if not topic_filter then
+			return false, packet_type[ptype]..": failed to parse topic filter: "..err
+		end
+		qos, err = parse_uint8(input.read_func)
+		if not qos then
+			return false, packet_type[ptype]..": failed to parse qos: "..err
+		end
+		subscriptions[#subscriptions + 1] = {
+			topic = topic_filter,
+			qos = qos,
+		}
+	end
+	return setmetatable({type=ptype, packet_id=packet_id, subscriptions=subscriptions}, packet_mt)
+end
+
+-- SUBACK return codes
+-- DOC: 3.9.3 Payload
+local suback_rc = {
+	[0x00] = "Success - Maximum QoS 0",
+	[0x01] = "Success - Maximum QoS 1",
+	[0x02] = "Success - Maximum QoS 2",
+	[0x80] = "Failure",
+}
+protocol4.suback_rc = suback_rc
+
+--- Parsed SUBACK packet metatable
+local suback_packet_mt = {
+	__tostring = protocol.packet_tostring, -- packet-to-human-readable-string conversion metamethod using protocol.packet_tostring()
+	reason_strings = function(self) -- Returns return codes descriptions for the SUBACK packet according to its rc field
+		local human_readable = {}
+		for i, rc in ipairs(self.rc) do
+			local return_code = suback_rc[rc]
+			if return_code then
+				human_readable[i] = return_code
+			else
+				human_readable[i] = "Unknown: "..tostring(rc)
+			end
+		end
+		return human_readable
+	end,
+}
+suback_packet_mt.__index = suback_packet_mt
+protocol4.suback_packet_mt = suback_packet_mt
+
+-- Parse SUBACK packet, DOC: 3.9 SUBACK – Subscribe acknowledgement
+local function parse_packet_suback(ptype, flags, input)
+	-- DOC: 3.9.1 Fixed header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available < 3 then
+		return false, packet_type[ptype]..": expecting data of length at least 3 bytes"
+	end
+	-- DOC: 3.9.2 Variable header
+	-- DOC: 3.9.3 Payload
+	local packet_id = parse_uint16(input.read_func)
+	local rc = {} -- DOC: The payload contains a list of return codes.
+	while input.available > 0 do
+		rc[#rc + 1] = parse_uint8(input.read_func)
+	end
+	return setmetatable({type=ptype, packet_id=packet_id, rc=rc}, suback_packet_mt)
+end
+
+-- Parse UNSUBSCRIBE packet, DOC: 3.10 UNSUBSCRIBE – Unsubscribe from topics
+local function parse_packet_unsubscribe(ptype, flags, input)
+	-- DOC: 3.10.1 Fixed header
+	if flags ~= 2 then
+		-- DOC: The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.10.1-1].
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available < 4 then -- variable header (2) + payload: topic length (2)
+		-- DOC: The Payload of an UNSUBSCRIBE packet MUST contain at least one Topic Filter. An UNSUBSCRIBE packet with no payload is a protocol violation [MQTT-3.10.3-2].
+		return false, packet_type[ptype]..": expecting data of length at least 4 bytes"
+	end
+	-- DOC: 3.10.2 Variable header
+	local packet_id = parse_uint16(input.read_func)
+	-- DOC: 3.10.3 Payload
+	local subscriptions = {}
+	while input.available > 0 do
+		local topic_filter, err = parse_string(input.read_func)
+		if not topic_filter then
+			return false, packet_type[ptype]..": failed to parse topic filter: "..err
+		end
+		subscriptions[#subscriptions + 1] = topic_filter
+	end
+	return setmetatable({type=ptype, packet_id=packet_id, subscriptions=subscriptions}, packet_mt)
+end
+
+-- Parse UNSUBACK packet, DOC: 3.11 UNSUBACK – Unsubscribe acknowledgement
+local function parse_packet_unsuback(ptype, flags, input)
+	-- DOC: 3.11.1 Fixed header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available ~= 2 then
+		return false, packet_type[ptype]..": expecting data of length 2 bytes"
+	end
+	-- DOC: 3.11.2 Variable header
+	local packet_id = parse_uint16(input.read_func)
+	return setmetatable({type=ptype, packet_id=packet_id}, packet_mt)
+end
+
+-- Parse PINGREQ packet, DOC: 3.12 PINGREQ – PING request
+local function parse_packet_pingreq(ptype, flags, input)
+	-- DOC: 3.12.1 Fixed header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available ~= 0 then
+		return false, packet_type[ptype]..": expecting data of length 0 bytes"
+	end
+	return setmetatable({type=ptype}, packet_mt)
+end
+
+-- Parse PINGRESP packet, DOC: 3.13 PINGRESP – PING response
+local function parse_packet_pingresp(ptype, flags, input)
+	-- DOC: 3.13.1 Fixed header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available ~= 0 then
+		return false, packet_type[ptype]..": expecting data of length 0 bytes"
+	end
+	return setmetatable({type=ptype}, packet_mt)
+end
+
+-- Parse DISCONNECT packet, DOC: 3.14 DISCONNECT – Disconnect notification
+local function parse_packet_disconnect(ptype, flags, input)
+	-- DOC: 3.14.1 Fixed header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available ~= 0 then
+		return false, packet_type[ptype]..": expecting data of length 0 bytes"
+	end
+	return setmetatable({type=ptype}, packet_mt)
+end
+
+-- Parse packet using given read_func
+-- Returns packet on success or false and error message on failure
+function protocol4.parse_packet(read_func)
+	local ptype, flags, input = start_parse_packet(read_func)
+	if not ptype then
+		return false, flags -- flags is error message in this case
+	end
+	-- parse read data according type in fixed header
+	if ptype == packet_type.CONNECT then			-- 1
+		return parse_packet_connect_input(input, const_v311)
+	elseif ptype == packet_type.CONNACK then		-- 2
+		return parse_packet_connack(ptype, flags, input)
+	elseif ptype == packet_type.PUBLISH then		-- 3
+		return parse_packet_publish(ptype, flags, input)
+	elseif ptype == packet_type.PUBACK then			-- 4
+		return parse_packet_puback(ptype, flags, input)
+	elseif ptype == packet_type.PUBREC then			-- 5
+		return parse_packet_pubrec(ptype, flags, input)
+	elseif ptype == packet_type.PUBREL then			-- 6
+		return parse_packet_pubrel(ptype, flags, input)
+	elseif ptype == packet_type.PUBCOMP then		-- 7
+		return parse_packet_pubcomp(ptype, flags, input)
+	elseif ptype == packet_type.SUBSCRIBE then		-- 8
+		return parse_packet_subscribe(ptype, flags, input)
+	elseif ptype == packet_type.SUBACK then			-- 9
+		return parse_packet_suback(ptype, flags, input)
+	elseif ptype == packet_type.UNSUBSCRIBE then	-- 10
+		return parse_packet_unsubscribe(ptype, flags, input)
+	elseif ptype == packet_type.UNSUBACK then		-- 11
+		return parse_packet_unsuback(ptype, flags, input)
+	elseif ptype == packet_type.PINGREQ then		-- 12
+		return parse_packet_pingreq(ptype, flags, input)
+	elseif ptype == packet_type.PINGRESP then		-- 13
+		return parse_packet_pingresp(ptype, flags, input)
+	elseif ptype == packet_type.DISCONNECT then		-- 14
+		return parse_packet_disconnect(ptype, flags, input)
+	else
+		return false, "unexpected packet type received: "..tostring(ptype)
+	end
+end
+
+-- Continue parsing of the MQTT v3.1.1 CONNECT packet
+-- Internally called from the protocol.parse_packet_connect_input() function
+-- Returns packet on success or false and error message on failure
+function protocol4._parse_packet_connect_continue(input, packet)
+	-- DOC: 3.1.3 Payload
+	-- These fields, if present, MUST appear in the order Client Identifier, Will Topic, Will Message, User Name, Password
+	local read_func = input.read_func
+	local client_id, err
+
+	-- DOC: 3.1.3.1 Client Identifier
+	client_id, err = parse_string(read_func)
+	if not client_id then
+		return false, "CONNECT: failed to parse client_id: "..err
+	end
+	packet.id = client_id
+
+	local will = packet.will
+	if will then
+		-- 3.1.3.2 Will Topic
+		local will_topic, will_payload
+		will_topic, err = parse_string(read_func)
+		if not will_topic then
+			return false, "CONNECT: failed to parse will_topic: "..err
+		end
+		will.topic = will_topic
+
+		-- DOC: 3.1.3.3 Will Message
+		will_payload, err = parse_string(read_func)
+		if not will_payload then
+			return false, "CONNECT: failed to parse will_payload: "..err
+		end
+		will.payload = will_payload
+	end
+
+	if packet.username then
+		-- DOC: 3.1.3.4 User Name
+		local username
+		username, err = parse_string(read_func)
+		if not username then
+			return false, "CONNECT: failed to parse username: "..err
+		end
+		packet.username = username
+	else
+		packet.username = nil
+	end
+
+	if packet.password then
+		-- DOC: 3.1.3.5 Password
+		if not packet.username then
+			return false, "CONNECT: MQTT v3.1.1 does not allow providing password without username"
+		end
+		local password
+		password, err = parse_string(read_func)
+		if not password then
+			return false, "CONNECT: failed to parse password: "..err
+		end
+		packet.password = password
+	else
+		packet.password = nil
+	end
+
+	return setmetatable(packet, packet_mt)
+end
+
+-- export module table
+return protocol4
+
+-- vim: ts=4 sts=4 sw=4 noet ft=lua
+
+end
+Loaders["mqtt.protocol5"] = function()
+local require = Require
+--[[
+
+Here is a MQTT v5.0 protocol implementation
+
+MQTT v5.0 documentation (DOC):
+	http://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html
+
+]]
+
+-- module table
+local protocol5 = {}
+
+-- load required stuff
+local type = type
+local error = error
+local assert = assert
+local ipairs = ipairs
+local require = require
+local tostring = tostring
+local setmetatable = setmetatable
+
+local table = require("table")
+local unpack = table.unpack or unpack
+local tbl_sort = table.sort
+
+local string = require("string")
+local str_char = string.char
+local fmt = string.format
+
+local const = require("mqtt.const")
+local const_v50 = const.v50
+
+local tools = require("mqtt.tools")
+local sortedpairs = tools.sortedpairs
+
+local bit = require("mqtt.bitwrap")
+local bor = bit.bor
+local band = bit.band
+local lshift = bit.lshift
+local rshift = bit.rshift
+
+local protocol = require("mqtt.protocol")
+local make_uint8 = protocol.make_uint8
+local make_uint16 = protocol.make_uint16
+local make_uint32 = protocol.make_uint32
+local make_string = protocol.make_string
+local make_var_length = protocol.make_var_length
+local parse_var_length = protocol.parse_var_length
+local make_uint8_0_or_1 = protocol.make_uint8_0_or_1
+local make_uint16_nonzero = protocol.make_uint16_nonzero
+local make_var_length_nonzero = protocol.make_var_length_nonzero
+local parse_string = protocol.parse_string
+local parse_uint8 = protocol.parse_uint8
+local parse_uint8_0_or_1 = protocol.parse_uint8_0_or_1
+local parse_uint16 = protocol.parse_uint16
+local parse_uint16_nonzero = protocol.parse_uint16_nonzero
+local parse_uint32 = protocol.parse_uint32
+local parse_var_length_nonzero = protocol.parse_var_length_nonzero
+local make_header = protocol.make_header
+local check_qos = protocol.check_qos
+local check_packet_id = protocol.check_packet_id
+local combine = protocol.combine
+local packet_type = protocol.packet_type
+local packet_mt = protocol.packet_mt
+local connack_packet_mt = protocol.connack_packet_mt
+local start_parse_packet = protocol.start_parse_packet
+local parse_packet_connect_input = protocol.parse_packet_connect_input
+
+-- Returns true if given value is a valid Retain Handling option, DOC: 3.8.3.1 Subscription Options
+local function check_retain_handling(val)
+	return (val == 0) or (val == 1) or (val == 2)
+end
+
+-- Create Connect Flags data, DOC: 3.1.2.3 Connect Flags
+local function make_connect_flags(args)
+	local byte = 0 -- bit 0 should be zero
+	-- DOC: 3.1.2.4 Clean Start
+	if args.clean ~= nil then
+		assert(type(args.clean) == "boolean", "expecting .clean to be a boolean")
+		if args.clean then
+			byte = bor(byte, lshift(1, 1))
+		end
+	end
+	-- DOC: 3.1.2.5 Will Flag
+	if args.will ~= nil then
+		-- check required args are presented
+		assert(type(args.will) == "table", "expecting .will to be a table")
+		assert(type(args.will.payload) == "string", "expecting .will.payload to be a string")
+		assert(type(args.will.topic) == "string", "expecting .will.topic to be a string")
+		assert(type(args.will.qos) == "number", "expecting .will.qos to be a number")
+		assert(check_qos(args.will.qos), "expecting .will.qos to be a valid QoS value")
+		assert(type(args.will.retain) == "boolean", "expecting .will.retain to be a boolean")
+		if args.will.properties ~= nil then
+			assert(type(args.will.properties) == "table", "expecting .will.properties to be a table")
+		end
+		if args.will.user_properties ~= nil then
+			assert(type(args.will.user_properties) == "table", "expecting .will.user_properties to be a table")
+		end
+		-- will flag should be set to 1
+		byte = bor(byte, lshift(1, 2))
+		-- DOC: 3.1.2.6 Will QoS
+		byte = bor(byte, lshift(args.will.qos, 3))
+		-- DOC: 3.1.2.7 Will Retain
+		if args.will.retain then
+			byte = bor(byte, lshift(1, 5))
+		end
+	end
+	-- DOC: 3.1.2.8 User Name Flag
+	if args.username ~= nil then
+		assert(type(args.username) == "string", "expecting .username to be a string")
+		byte = bor(byte, lshift(1, 7))
+	end
+	-- DOC: 3.1.2.9 Password Flag
+	if args.password ~= nil then
+		assert(type(args.password) == "string", "expecting .password to be a string")
+		assert(args.username, "the .username is required to set .password")
+		byte = bor(byte, lshift(1, 6))
+	end
+	return make_uint8(byte)
+end
+
+-- Known property names and its identifiers, DOC: 2.2.2.2 Property
+local property_pairs = {
+	{ 0x01, "payload_format_indicator",
+		make = make_uint8_0_or_1,
+		parse = parse_uint8_0_or_1, },
+	{ 0x02, "message_expiry_interval",
+		make = make_uint32,
+		parse = parse_uint32, },
+	{ 0x03, "content_type",
+		make = make_string,
+		parse = parse_string, },
+	{ 0x08, "response_topic",
+		make = make_string,
+		parse = parse_string, },
+	{ 0x09, "correlation_data",
+		make = make_string,
+		parse = parse_string, },
+	{ 0x0B, "subscription_identifiers",
+		make = function(value) return str_char(make_var_length_nonzero(value)) end,
+		parse = parse_var_length_nonzero,
+		multiple = true, },
+	{ 0x11, "session_expiry_interval",
+		make = make_uint32,
+		parse = parse_uint32, },
+	{ 0x12, "assigned_client_identifier",
+		make = make_string,
+		parse = parse_string, },
+	{ 0x13, "server_keep_alive",
+		make = make_uint16,
+		parse = parse_uint16, },
+	{ 0x15, "authentication_method",
+		make = make_string,
+		parse = parse_string, },
+	{ 0x16, "authentication_data",
+		make = make_string,
+		parse = parse_string, },
+	{ 0x17, "request_problem_information",
+		make = make_uint8_0_or_1,
+		parse = parse_uint8_0_or_1, },
+	{ 0x18, "will_delay_interval",
+		make = make_uint32,
+		parse = parse_uint32, },
+	{ 0x19, "request_response_information",
+		make = make_uint8_0_or_1,
+		parse = parse_uint8_0_or_1, },
+	{ 0x1A, "response_information",
+		make = make_string,
+		parse = parse_string, },
+	{ 0x1C, "server_reference",
+		make = make_string,
+		parse = parse_string, },
+	{ 0x1F, "reason_string",
+		make = make_string,
+		parse = parse_string, },
+	{ 0x21, "receive_maximum",
+		make = make_uint16,
+		parse = parse_uint16, },
+	{ 0x22, "topic_alias_maximum",
+		make = make_uint16,
+		parse = parse_uint16, },
+	{ 0x23, "topic_alias",
+		make = make_uint16_nonzero,
+		parse = parse_uint16_nonzero, },
+	{ 0x24, "maximum_qos",
+		make = make_uint8_0_or_1,
+		parse = parse_uint8_0_or_1, },
+	{ 0x25, "retain_available",
+		make = make_uint8_0_or_1,
+		parse = parse_uint8_0_or_1, },
+	{ 0x26, "user_property", -- NOTE: not implemented intentionally
+		make = function(value_) error("not implemented") end,
+		parse = function(read_func_) error("not implemented") end, },
+	{ 0x27, "maximum_packet_size",
+		make = make_uint32,
+		parse = parse_uint32, },
+	{ 0x28, "wildcard_subscription_available",
+		make = make_uint8_0_or_1,
+		parse = parse_uint8_0_or_1, },
+	{ 0x29, "subscription_identifiers_available",
+		make = make_uint8_0_or_1,
+		parse = parse_uint8_0_or_1, },
+	{ 0x2A, "shared_subscription_available",
+		make = make_uint8_0_or_1,
+		parse = parse_uint8_0_or_1, },
+}
+
+-- properties table with keys in two directions: from name to identifier and back
+local properties = {}
+-- table with property value make functions
+local property_make = {}
+-- table with property value parse function
+local property_parse = {}
+-- table with property multiple flag
+local property_multiple = {}
+-- fill the properties and property_make tables
+for _, prop in ipairs(property_pairs) do
+	properties[prop[2]] = prop[1]				-- name ==> identifier
+	properties[prop[1]] = prop[2]				-- identifier ==> name
+	property_make[prop[1]] = prop.make			-- identifier ==> make function
+	property_parse[prop[1]] = prop.parse		-- identifier ==> make function
+	property_multiple[prop[1]] = prop.multiple	-- identifier ==> multiple flag
+end
+
+-- Allowed properties per packet type
+local allowed_properties = {
+	[packet_type.CONNECT] = {
+		[0x11] = true, -- DOC: 3.1.2.11.2 Session Expiry Interval
+		[0x21] = true, -- DOC: 3.1.2.11.3 Receive Maximum
+		[0x27] = true, -- DOC: 3.1.2.11.4 Maximum Packet Size
+		[0x22] = true, -- DOC: 3.1.2.11.5 Topic Alias Maximum
+		[0x19] = true, -- DOC: 3.1.2.11.6 Request Response Information
+		[0x17] = true, -- DOC: 3.1.2.11.7 Request Problem Information
+		[0x26] = true, -- DOC: 3.1.2.11.8 User Property
+		[0x15] = true, -- DOC: 3.1.2.11.9 Authentication Method
+		[0x16] = true, -- DOC: 3.1.2.11.10 Authentication Data
+	},
+	[packet_type.CONNACK] = {
+		[0x11] = true, -- DOC: 3.2.2.3.2 Session Expiry Interval
+		[0x21] = true, -- DOC: 3.2.2.3.3 Receive Maximum
+		[0x24] = true, -- DOC: 3.2.2.3.4 Maximum QoS
+		[0x25] = true, -- DOC: 3.2.2.3.5 Retain Available
+		[0x27] = true, -- DOC: 3.2.2.3.6 Maximum Packet Size
+		[0x12] = true, -- DOC: 3.2.2.3.7 Assigned Client Identifier
+		[0x22] = true, -- DOC: 3.2.2.3.8 Topic Alias Maximum
+		[0x1F] = true, -- DOC: 3.2.2.3.9 Reason String
+		[0x26] = true, -- DOC: 3.2.2.3.10 User Property
+		[0x28] = true, -- DOC: 3.2.2.3.11 Wildcard Subscription Available
+		[0x29] = true, -- DOC: 3.2.2.3.12 Subscription Identifiers Available
+		[0x2A] = true, -- DOC: 3.2.2.3.13 Shared Subscription Available
+		[0x13] = true, -- DOC: 3.2.2.3.14 Server Keep Alive
+		[0x1A] = true, -- DOC: 3.2.2.3.15 Response Information
+		[0x1C] = true, -- DOC: 3.2.2.3.16 Server Reference
+		[0x15] = true, -- DOC: 3.2.2.3.17 Authentication Method
+		[0x16] = true, -- DOC: 3.2.2.3.18 Authentication Data
+	},
+	[packet_type.PUBLISH] = {
+		[0x01] = true, -- DOC: 3.3.2.3.2 Payload Format Indicator
+		[0x02] = true, -- DOC: 3.3.2.3.3 Message Expiry Interval
+		[0x23] = true, -- DOC: 3.3.2.3.4 Topic Alias
+		[0x08] = true, -- DOC: 3.3.2.3.5 Response Topic
+		[0x09] = true, -- DOC: 3.3.2.3.6 Correlation Data
+		[0x26] = true, -- DOC: 3.3.2.3.7 User Property
+		[0x0B] = true, -- DOC: 3.3.2.3.8 Subscription Identifier
+		[0x03] = true, -- DOC: 3.3.2.3.9 Content Type
+	},
+	will = {
+		[0x18] = true, -- DOC: 3.1.3.2.2 Will Delay Interval
+		[0x01] = true, -- DOC: 3.1.3.2.3 Payload Format Indicator
+		[0x02] = true, -- DOC: 3.1.3.2.4 Message Expiry Interval
+		[0x03] = true, -- DOC: 3.1.3.2.5 Content Type
+		[0x08] = true, -- DOC: 3.1.3.2.6 Response Topic
+		[0x09] = true, -- DOC: 3.1.3.2.7 Correlation Data
+		[0x26] = true, -- DOC: 3.1.3.2.8 User Property
+	},
+	[packet_type.PUBACK] = {
+		[0x1F] = true, -- DOC: 3.4.2.2.2 Reason String
+		[0x26] = true, -- DOC: 3.4.2.2.3 User Property
+	},
+	[packet_type.PUBREC] = {
+		[0x1F] = true, -- DOC: 3.5.2.2.2 Reason String
+		[0x26] = true, -- DOC: 3.5.2.2.3 User Property
+	},
+	[packet_type.PUBREL] = {
+		[0x1F] = true, -- DOC: 3.6.2.2.2 Reason String
+		[0x26] = true, -- DOC: 3.6.2.2.3 User Property
+	},
+	[packet_type.PUBCOMP] = {
+		[0x1F] = true, -- DOC: 3.7.2.2.2 Reason String
+		[0x26] = true, -- DOC: 3.7.2.2.3 User Property
+	},
+	[packet_type.SUBSCRIBE] = {
+		[0x0B] = { multiple=false }, -- DOC: 3.8.2.1.2 Subscription Identifier -- DOC: It is a Protocol Error to include the Subscription Identifier more than once.
+		[0x26] = true, -- DOC: 3.8.2.1.3 User Property
+	},
+	[packet_type.SUBACK] = {
+		[0x1F] = true, -- DOC: 3.9.2.1.2 Reason String
+		[0x26] = true, -- DOC: 3.9.2.1.3 User Property
+	},
+	[packet_type.UNSUBSCRIBE] = {
+		[0x26] = true, -- DOC: 3.10.2.1.2 User Property
+	},
+	[packet_type.UNSUBACK] = {
+		[0x1F] = true, -- DOC: 3.11.2.1.2 Reason String
+		[0x26] = true, -- DOC: 3.11.2.1.3 User Property
+	},
+	-- NOTE: PINGREQ (3.12), PINGRESP (3.13) has no properties
+	[packet_type.DISCONNECT] = {
+		[0x11] = true, -- DOC: 3.14.2.2.2 Session Expiry Interval
+		[0x1F] = true, -- DOC: 3.14.2.2.3 Reason String
+		[0x26] = true, -- DOC: 3.14.2.2.4 User Property
+		[0x1C] = true, -- DOC: 3.14.2.2.5 Server Reference
+	},
+	[packet_type.AUTH] = {
+		[0x15] = true, -- DOC: 3.15.2.2.2 Authentication Method
+		[0x16] = true, -- DOC: 3.15.2.2.3 Authentication Data
+		[0x1F] = true, -- DOC: 3.15.2.2.4 Reason String
+		[0x26] = true, -- DOC: 3.15.2.2.5 User Property
+	},
+}
+
+-- Create properties field for various control packets, DOC: 2.2.2 Properties
+local function make_properties(ptype, args)
+	local allowed = assert(allowed_properties[ptype], "invalid packet type to detect allowed properties")
+	local props = ""
+	local uprop_id = properties.user_property
+	-- writing known properties
+	if args.properties ~= nil then
+		assert(type(args.properties) == "table", "expecting .properties to be a table")
+		-- validate all properties and append them to order list
+		local order = {}
+		for name, value in sortedpairs(args.properties) do
+			assert(type(name) == "string", "expecting property name to be a string: "..tostring(name))
+			-- detect property identifier and check it's allowed for that packet type
+			local prop_id = assert(properties[name], "unknown property: "..tostring(name))
+			assert(prop_id ~= uprop_id, "user properties should be passed in .user_properties table")
+			if not allowed[prop_id] then
+				error("property "..name.." is not allowed for packet type "..packet_type[ptype])
+			end
+			order[#order + 1] = { prop_id, name, value }
+		end
+		-- sort props in the identifier ascending order
+		tbl_sort(order, function(a, b) return a[1] < b[1] end)
+		for _, item in ipairs(order) do
+			local prop_id, name,  value = unpack(item)
+			if property_multiple[prop_id] then
+				assert(type(value) == "table", "expecting list-table for property with multiple value")
+				assert(#value == 1, "only one value for multiple-property supported")
+				value = value[1]
+			end
+			-- make property data
+			local ok, val = pcall(property_make[prop_id], value)
+			if not ok then
+				error("invalid property value: "..name.." = "..tostring(value)..": "..tostring(val))
+			end
+			local prop = combine(
+				str_char(make_var_length(prop_id)),
+				val
+			)
+			-- and append it to props
+			if type(props) == "string" then
+				props = combine(prop)
+			else
+				props:append(prop)
+			end
+		end
+	end
+	-- writing userproperties
+	if args.user_properties ~= nil then
+		assert(type(args.user_properties) == "table", "expecting .user_properties to be a table")
+		assert(allowed[uprop_id], "user_property is not allowed for packet type "..ptype)
+		local order = {}
+		local dups = {}
+		if args.user_properties[1] then
+			-- at first use array items as they given as {name, value} pairs with stable order
+			for i, pair in ipairs(args.user_properties) do
+				-- validate types for name and value
+				if type(pair) ~= "table" then
+					error(fmt("user property at position %d should be {name, value} table", i))
+				end
+				if type(pair[1]) ~= "string" then
+					error(fmt("user property name at position %d should be a string", i))
+				end
+				if type(pair[2]) ~= "string" then
+					error(fmt("user property '%s' value at position %d should be a string", pair[1], i))
+				end
+				order[i] = pair
+				dups[pair[1]] = pair[2]
+			end
+		end
+		-- now add the rest of user properties given as string table keys
+		for name, val in sortedpairs(args.user_properties) do
+			if type(name) ~= "number" then -- skipping number keys as they already added above
+				-- validate types for name and value
+				if type(name) ~= "string" then
+					error(fmt("user property name '%s' should be a string", name))
+				end
+				if type(val) ~= "string" then
+					error(fmt("user property '%s' value '%s' should be a string", name, val))
+				end
+				-- check that name+value key already added
+				if dups[name] ~= val then
+					order[#order + 1] = {name, val}
+				end
+			end
+		end
+		for _, pair in ipairs(order) do
+			local name = pair[1]
+			local value = pair[2]
+			-- make user property data
+			local prop = combine(
+				str_char(make_var_length(uprop_id)),
+				make_string(name),
+				make_string(value)
+			)
+			-- and append it to props
+			if type(props) == "string" then
+				props = combine(prop)
+			else
+				props:append(prop)
+			end
+		end
+	end
+	-- and combine properties with its length field
+	return combine(
+		str_char(make_var_length(props:len())),		-- DOC: 2.2.2.1 Property Length
+		props										-- DOC: 2.2.2.2 Property
+	)
+end
+
+-- Create CONNECT packet, DOC: 3.1 CONNECT – Connection Request
+local function make_packet_connect(args)
+	-- check args
+	assert(type(args.id) == "string", "expecting .id to be a string with MQTT client id")
+	-- DOC: 3.1.2.10 Keep Alive
+	local keep_alive_ival = 0
+	if args.keep_alive then
+		assert(type(args.keep_alive) == "number")
+		keep_alive_ival = args.keep_alive
+	end
+	-- DOC: 3.1.2.11 CONNECT Properties
+	local props = make_properties(packet_type.CONNECT, args)
+	-- DOC: 3.1.2 CONNECT Variable Header
+	local variable_header = combine(
+		make_string("MQTT"), 				-- DOC: 3.1.2.1 Protocol Name
+		make_uint8(5), 						-- DOC: 3.1.2.2 Protocol Version (5 is for MQTT v5.0)
+		make_connect_flags(args), 			-- DOC: 3.1.2.3 Connect Flags
+		make_uint16(keep_alive_ival), 		-- DOC: 3.1.2.10 Keep Alive
+		props								-- DOC: 3.1.2.11 CONNECT Properties
+	)
+	-- DOC: 3.1.3 CONNECT Payload
+	-- DOC: 3.1.3.1 Client Identifier (ClientID)
+	local payload = combine(
+		make_string(args.id)
+	)
+	if args.will then
+		-- DOC: 3.1.3.2 Will Properties
+		payload:append(make_properties("will", args.will))
+		-- DOC: 3.1.3.3 Will Topic
+		assert(type(args.will.topic) == "string", "expecting will.topic to be a string")
+		payload:append(make_string(args.will.topic))
+		-- DOC: 3.1.3.4 Will Payload
+		assert(args.will.payload == nil or type(args.will.payload) == "string", "expecting will.payload to be a string or nil")
+		payload:append(make_string(args.will.payload))
+	end
+	if args.username then
+		-- DOC: 3.1.3.5 User Name
+		payload:append(make_string(args.username))
+		if args.password then
+			-- DOC: 3.1.3.6 Password
+			payload:append(make_string(args.password))
+		end
+	end
+	-- DOC: 3.1.1 Fixed header
+	local header = make_header(packet_type.CONNECT, 0, variable_header:len() + payload:len())
+	return combine(header, variable_header, payload)
+end
+
+-- Create CONNACK packet, DOC: 3.2 CONNACK – Connect acknowledgement
+local function make_packet_connack(args)
+	-- check args
+	assert(type(args.sp) == "boolean", "expecting .sp to be a boolean with Session Present flag")
+	assert(type(args.rc) == "number", "expecting .rc to be a number with Connect Reason Code")
+	-- DOC: 3.2.2 CONNACK Variable Header
+	local props = make_properties(packet_type.CONNACK, args)
+	local variable_header = combine(
+		make_uint8(args.sp and 1 or 0),		-- DOC: 3.2.2.1.1 Session Present
+		make_uint8(args.rc),				-- DOC: 3.2.2.2 Connect Reason Code
+		props								-- DOC: 3.2.2.3 CONNACK Properties
+	)
+	-- DOC: 3.2.3 CONNACK Payload
+	-- DOC: The CONNACK packet has no Payload.
+	-- DOC: 3.2.1 CONNACK Fixed Header
+	local header = make_header(packet_type.CONNACK, 0, variable_header:len())
+	return combine(header, variable_header)
+end
+
+-- Create PUBLISH packet, DOC: 3.3 PUBLISH – Publish message
+local function make_packet_publish(args)
+	-- check args
+	assert(type(args.topic) == "string", "expecting .topic to be a string")
+	if args.payload ~= nil then
+		assert(type(args.payload) == "string", "expecting .payload to be a string")
+	end
+	if args.qos ~= nil then
+		assert(type(args.qos) == "number", "expecting .qos to be a number")
+		assert(check_qos(args.qos), "expecting .qos to be a valid QoS value")
+	end
+	if args.retain ~= nil then
+		assert(type(args.retain) == "boolean", "expecting .retain to be a boolean")
+	end
+	if args.dup ~= nil then
+		assert(type(args.dup) == "boolean", "expecting .dup to be a boolean")
+	end
+
+	-- DOC: 3.3.1 PUBLISH Fixed Header
+	local flags = 0
+	-- 3.3.1.3 RETAIN
+	if args.retain then
+		flags = bor(flags, 0x1)
+	end
+	-- DOC: 3.3.1.2 QoS
+	flags = bor(flags, lshift(args.qos or 0, 1))
+	-- DOC: 3.3.1.1 DUP
+	if args.dup then
+		flags = bor(flags, lshift(1, 3))
+	end
+	-- DOC: 3.3.2 PUBLISH Variable Header
+	local variable_header = combine(
+		make_string(args.topic)
+	)
+	-- DOC: 3.3.2.2 Packet Identifier
+	if args.qos and args.qos > 0 then
+		assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+		assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+		variable_header:append(make_uint16(args.packet_id))
+	end
+	-- DOC: 3.3.2.3 PUBLISH Properties
+	variable_header:append(make_properties(packet_type.PUBLISH, args))
+	-- DOC: 3.3.3 PUBLISH Payload
+	local payload
+	if args.payload then
+		payload = args.payload
+	else
+		payload = ""
+	end
+	-- DOC: 3.3.1 Fixed header
+	local header = make_header(packet_type.PUBLISH, flags, variable_header:len() + payload:len())
+	return combine(header, variable_header, payload)
+end
+
+-- Create PUBACK packet, DOC: 3.4 PUBACK – Publish acknowledgement
+local function make_packet_puback(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	assert(type(args.rc) == "number", "expecting .rc to be a number")
+	-- DOC: 3.4.2 PUBACK Variable Header
+	local variable_header = combine(make_uint16(args.packet_id))
+	local props = make_properties(packet_type.PUBACK, args)		-- DOC: 3.4.2.2 PUBACK Properties
+	-- DOC: The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Success) and there are no Properties. In this case the PUBACK has a Remaining Length of 2.
+	if props:len() > 1 or args.rc ~= 0 then
+		variable_header:append(make_uint8(args.rc))				-- DOC: 3.4.2.1 PUBACK Reason Code
+		variable_header:append(props)							-- DOC: 3.4.2.2 PUBACK Properties
+	end
+	-- DOC: 3.4.1 PUBACK Fixed Header
+	local header = make_header(packet_type.PUBACK, 0, variable_header:len())
+	return combine(header, variable_header)
+end
+
+-- Create PUBREC packet, DOC: 3.5 PUBREC – Publish received (QoS 2 delivery part 1)
+local function make_packet_pubrec(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	assert(type(args.rc) == "number", "expecting .rc to be a number")
+	-- DOC: 3.5.2 PUBREC Variable Header
+	local variable_header = combine(make_uint16(args.packet_id))
+	local props = make_properties(packet_type.PUBREC, args)		-- DOC: 3.5.2.2 PUBREC Properties
+	-- DOC: The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Success) and there are no Properties. In this case the PUBREC has a Remaining Length of 2.
+	if props:len() > 1 or args.rc ~= 0 then
+		variable_header:append(make_uint8(args.rc))				-- DOC: 3.5.2.1 PUBREC Reason Code
+		variable_header:append(props)							-- DOC: 3.5.2.2 PUBREC Properties
+	end
+	-- DOC: 3.5.1 PUBREC Fixed Header
+	local header = make_header(packet_type.PUBREC, 0, variable_header:len())
+	return combine(header, variable_header)
+end
+
+-- Create PUBREL packet, DOC: 3.6 PUBREL – Publish release (QoS 2 delivery part 2)
+local function make_packet_pubrel(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	assert(type(args.rc) == "number", "expecting .rc to be a number")
+	-- DOC: 3.6.2 PUBREL Variable Header
+	local variable_header = combine(make_uint16(args.packet_id))
+	local props = make_properties(packet_type.PUBREL, args)		-- DOC: 3.6.2.2 PUBREL Properties
+	-- DOC: The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Success) and there are no Properties. In this case the PUBREL has a Remaining Length of 2.
+	if props:len() > 1 or args.rc ~= 0 then
+		variable_header:append(make_uint8(args.rc))				-- DOC: 3.6.2.1 PUBREL Reason Code
+		variable_header:append(props)							-- DOC: 3.6.2.2 PUBREL Properties
+	end
+	-- DOC: 3.6.1 PUBREL Fixed Header
+	local header = make_header(packet_type.PUBREL, 2, variable_header:len()) -- flags: fixed 0010 bits, DOC: Figure 3‑14 – PUBREL packet Fixed Header
+	return combine(header, variable_header)
+end
+
+-- Create PUBCOMP packet, DOC: 3.7 PUBCOMP – Publish complete (QoS 2 delivery part 3)
+local function make_packet_pubcomp(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	assert(type(args.rc) == "number", "expecting .rc to be a number")
+	-- DOC: 3.7.2 PUBCOMP Variable Header
+	local variable_header = combine(make_uint16(args.packet_id))
+	local props = make_properties(packet_type.PUBCOMP, args)	-- DOC: 3.7.2.2 PUBCOMP Properties
+	-- DOC: The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Success) and there are no Properties. In this case the PUBCOMP has a Remaining Length of 2.
+	if props:len() > 1 or args.rc ~= 0 then
+		variable_header:append(make_uint8(args.rc))				-- DOC: 3.7.2.1 PUBCOMP Reason Code
+		variable_header:append(props)							-- DOC: 3.7.2.2 PUBCOMP Properties
+	end
+	-- DOC: 3.7.1 PUBCOMP Fixed Header
+	local header = make_header(packet_type.PUBCOMP, 0, variable_header:len())
+	return combine(header, variable_header)
+end
+
+-- Create SUBSCRIBE packet, DOC: 3.8 SUBSCRIBE - Subscribe request
+local function make_packet_subscribe(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	assert(type(args.subscriptions) == "table", "expecting .subscriptions to be a table")
+	assert(#args.subscriptions > 0, "expecting .subscriptions to be a non-empty array")
+	-- DOC: 3.8.2 SUBSCRIBE Variable Header
+	local variable_header = combine(
+		make_uint16(args.packet_id),
+		make_properties(packet_type.SUBSCRIBE, args)	-- DOC: 3.8.2.1 SUBSCRIBE Properties
+	)
+	-- DOC: 3.8.3 SUBSCRIBE Payload
+	local payload = combine()
+	for i, subscription in ipairs(args.subscriptions) do
+		assert(type(subscription) == "table", "expecting .subscriptions["..i.."] to be a table")
+		assert(type(subscription.topic) == "string", "expecting .subscriptions["..i.."].topic to be a string")
+		if subscription.qos ~= nil then
+			assert(type(subscription.qos) == "number", "expecting .subscriptions["..i.."].qos to be a number")
+			assert(check_qos(subscription.qos), "expecting .subscriptions["..i.."].qos to be a valid QoS value")
+		end
+		if subscription.retain_as_published ~= nil then
+			assert(type(subscription.retain_as_published) == "boolean", "expecting .subscriptions["..i.."].retain_as_published to be a boolean")
+		end
+		if subscription.retain_handling ~= nil then
+			assert(type(subscription.retain_handling) == "number", "expecting .subscriptions["..i.."].retain_handling to be a number")
+			assert(check_retain_handling(subscription.retain_handling), "expecting .subscriptions["..i.."].retain_handling to be a valid Retain Handling option")
+		end
+		-- DOC: 3.8.3.1 Subscription Options
+		local so = subscription.qos or 0
+		if subscription.no_local then
+			so = bor(so, 4) -- set Bit 2
+		end
+		if subscription.retain_as_published then
+			so = bor(so, 8) -- set Bit 3
+		end
+		if subscription.retain_handling then
+			so = bor(so, lshift(subscription.retain_handling, 4)) -- set Bit 4 and 5
+		end
+		payload:append(make_string(subscription.topic))
+		payload:append(make_uint8(so))
+	end
+	-- DOC: 3.8.1 SUBSCRIBE Fixed Header
+	local header = make_header(packet_type.SUBSCRIBE, 2, variable_header:len() + payload:len()) -- flags: fixed 0010 bits, DOC: Figure 3‑18 SUBSCRIBE packet Fixed Header
+	return combine(header, variable_header, payload)
+end
+
+-- Create SUBACK packet, DOC: 3.9 SUBACK – Subscribe acknowledgement
+local function make_packet_suback(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	assert(type(args.rc) == "table", "expecting .rc to be a table")
+	assert(#args.rc > 0, "expecting .rc to be a non-empty array")
+	-- DOC: 3.9.2 SUBACK Variable Header
+	local variable_header = combine(
+		make_uint16(args.packet_id),
+		make_properties(packet_type.SUBACK, args)	-- DOC: 3.9.2.1 SUBACK Properties
+	)
+	-- DOC: 3.9.3 SUBACK Payload
+	local payload = combine()
+	for i, rc in ipairs(args.rc) do
+		assert(type(rc) == "number", "expecting .rc["..i.."] to be a number")
+		assert(rc >= 0 and rc <= 255, "expecting .rc["..i.."] to be in range [0, 255]")
+		payload:append(make_uint8(rc))
+	end
+	-- DOC: 3.9.1 SUBACK Fixed Header
+	local header = make_header(packet_type.SUBACK, 0, variable_header:len() + payload:len()) -- NOTE: fixed flags value 0x0
+	return combine(header, variable_header, payload)
+end
+
+-- Create UNSUBSCRIBE packet, DOC: 3.10 UNSUBSCRIBE – Unsubscribe request
+local function make_packet_unsubscribe(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	assert(type(args.subscriptions) == "table", "expecting .subscriptions to be a table")
+	assert(#args.subscriptions > 0, "expecting .subscriptions to be a non-empty array")
+	-- DOC: 3.10.2 UNSUBSCRIBE Variable Header
+	local variable_header = combine(
+		make_uint16(args.packet_id),
+		make_properties(packet_type.UNSUBSCRIBE, args)	-- DOC: 3.10.2.1 UNSUBSCRIBE Properties
+	)
+	-- DOC: 3.10.3 UNSUBSCRIBE Payload
+	local payload = combine()
+	for i, subscription in ipairs(args.subscriptions) do
+		assert(type(subscription) == "string", "expecting .subscriptions["..i.."] to be a string")
+		payload:append(make_string(subscription))
+	end
+	-- DOC: 3.10.1 UNSUBSCRIBE Fixed Header
+	local header = make_header(packet_type.UNSUBSCRIBE, 2, variable_header:len() + payload:len()) -- flags: fixed 0010 bits, DOC: Figure 3.28 – UNSUBSCRIBE packet Fixed Header
+	return combine(header, variable_header, payload)
+end
+
+-- Create UNSUBACK packet, DOC: 3.11 UNSUBACK – Unsubscribe acknowledgement
+local function make_packet_unsuback(args)
+	-- check args
+	assert(type(args.packet_id) == "number", "expecting .packet_id to be a number")
+	assert(check_packet_id(args.packet_id), "expecting .packet_id to be a valid Packet Identifier")
+	assert(type(args.rc) == "table", "expecting .rc to be a table")
+	assert(#args.rc > 0, "expecting .rc to be a non-empty array")
+	-- DOC: 3.11.2 UNSUBACK Variable Header
+	local variable_header = combine(
+		make_uint16(args.packet_id),
+		make_properties(packet_type.UNSUBACK, args)	-- DOC: 3.11.2.1 UNSUBACK Properties
+	)
+	-- DOC: 3.11.3 UNSUBACK Payload
+	local payload = combine()
+	for i, rc in ipairs(args.rc) do
+		assert(type(rc) == "number", "expecting .rc["..i.."] to be a number")
+		assert(rc >= 0 and rc <= 255, "expecting .rc["..i.."] to be in range [0, 255]")
+		payload:append(make_uint8(rc))
+	end
+	-- DOC: 3.11.1 UNSUBACK Fixed Header
+	local header = make_header(packet_type.UNSUBACK, 0, variable_header:len() + payload:len()) -- NOTE: fixed flags value 0x0
+	return combine(header, variable_header, payload)
+end
+
+-- Create DISCONNECT packet, DOC: 3.14 DISCONNECT – Disconnect notification
+local function make_packet_disconnect(args)
+	-- check args
+	assert(type(args.rc) == "number", "expecting .rc to be a number")
+	-- DOC: 3.14.2 DISCONNECT Variable Header
+	local variable_header = combine()
+	local props = make_properties(packet_type.DISCONNECT, args)	-- DOC: 3.14.2.2 DISCONNECT Properties
+	-- DOC: The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Normal disconnecton) and there are no Properties. In this case the DISCONNECT has a Remaining Length of 0.
+	if props:len() > 1 or args.rc ~= 0 then
+		variable_header:append(make_uint8(args.rc))				-- DOC: 3.14.2.1 Disconnect Reason Code
+		variable_header:append(props)							-- DOC: 3.14.2.2 DISCONNECT Properties
+	end
+	-- DOC: 3.14.1 DISCONNECT Fixed Header
+	local header = make_header(packet_type.DISCONNECT, 0, variable_header:len()) -- flags: 0
+	return combine(header, variable_header)
+end
+
+-- Create AUTH packet, DOC: 3.15 AUTH – Authentication exchange
+local function make_packet_auth(args)
+	-- check args
+	assert(type(args.rc) == "number", "expecting .rc to be a number")
+	-- DOC: 3.15.2 AUTH Variable Header
+	local variable_header = combine()
+	-- DOC: The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Success) and there are no Properties. In this case the AUTH has a Remaining Length of 0.
+	local props = make_properties(packet_type.AUTH, args)		-- DOC: 3.15.2.2 AUTH Properties
+	if props:len() > 1 or args.rc ~= 0 then
+		variable_header:append(make_uint8(args.rc))				-- DOC: 3.15.2.1 Authenticate Reason Code
+		variable_header:append(props)							-- DOC: 3.15.2.2 AUTH Properties
+	end
+	-- DOC: 3.15.1 AUTH Fixed Header
+	local header = make_header(packet_type.AUTH, 0, variable_header:len())
+	return combine(header, variable_header)
+end
+
+-- Create packet of given {type: number} in args
+function protocol5.make_packet(args)
+	assert(type(args) == "table", "expecting args to be a table")
+	assert(type(args.type) == "number", "expecting .type number in args")
+	local ptype = args.type
+	if ptype == packet_type.CONNECT then			-- 1
+		return make_packet_connect(args)
+	elseif ptype == packet_type.CONNACK then		-- 3
+		return make_packet_connack(args)
+	elseif ptype == packet_type.PUBLISH then		-- 3
+		return make_packet_publish(args)
+	elseif ptype == packet_type.PUBACK then			-- 4
+		return make_packet_puback(args)
+	elseif ptype == packet_type.PUBREC then			-- 5
+		return make_packet_pubrec(args)
+	elseif ptype == packet_type.PUBREL then			-- 6
+		return make_packet_pubrel(args)
+	elseif ptype == packet_type.PUBCOMP then		-- 7
+		return make_packet_pubcomp(args)
+	elseif ptype == packet_type.SUBSCRIBE then		-- 8
+		return make_packet_subscribe(args)
+	elseif ptype == packet_type.SUBACK then			-- 9
+		return make_packet_suback(args)
+	elseif ptype == packet_type.UNSUBSCRIBE then	-- 10
+		return make_packet_unsubscribe(args)
+	elseif ptype == packet_type.UNSUBACK then		-- 11
+		return make_packet_unsuback(args)
+	elseif ptype == packet_type.PINGREQ then		-- 12
+		-- DOC: 3.12 PINGREQ – PING request
+		return combine("\192\000") -- 192 == 0xC0, type == 12, flags == 0
+	elseif ptype == packet_type.PINGRESP then		-- 12
+		-- DOC: 3.13 PINGRESP – PING response
+		return combine("\208\000") -- 208 == 0xD0, type == 13, flags == 0
+	elseif ptype == packet_type.DISCONNECT then		-- 14
+		return make_packet_disconnect(args)
+	elseif ptype == packet_type.AUTH then			-- 15
+		return make_packet_auth(args)
+	else
+		error("unexpected packet type to make: "..ptype)
+	end
+end
+
+-- Parse properties using given read_data function for specified packet type
+-- Result will be stored in packet.properties and packet.user_properties
+-- Returns false plus string with error message on failure
+-- Returns true on success
+local function parse_properties(ptype, read_data, input, packet)
+	assert(type(read_data) == "function", "expecting read_data to be a function")
+	-- DOC: 2.2.2 Properties
+	-- parse Property Length
+	-- create read_func for parse_var_length and other parse functions, reading from data string instead of network connector
+	local len, err = parse_var_length(read_data)
+	if not len then
+		return false, "failed to parse properties length: "..err
+	end
+	-- check data contains enough bytes for reading properties
+	if input.available < len then
+		return false, "not enough data to parse properties of length "..len
+	end
+	-- ensure properties and user_properties are presented in packet
+	if not packet.properties then
+		packet.properties = {}
+	end
+	if not packet.user_properties then
+		packet.user_properties = {}
+	end
+	local uprops = packet.user_properties
+	-- parse allowed properties
+	local uprop_id = properties.user_property
+	local allowed = assert(allowed_properties[ptype], "no allowed properties for specified packet type: "..tostring(ptype))
+	local props_end = input[1] + len
+	while input[1] < props_end do
+		-- property id, DOC: 2.2.2.2 Property
+		local prop_id
+		prop_id, err = parse_var_length(read_data)
+		if not prop_id then
+			return false, "failed to parse property length: "..err
+		end
+		if not allowed[prop_id] then
+			if not allowed[prop_id] then
+				return false, "property "..tostring(properties[prop_id]).." ("..prop_id..") is not allowed for that packet type"
+			end
+		end
+		if prop_id == uprop_id then
+			-- parse name=value string pair
+			local name, value
+			name, err = parse_string(read_data)
+			if not name then
+				return false, "failed to parse user property name: "..err
+			end
+			value, err = parse_string(read_data)
+			if not value then
+				return false, "failed to parse user property value: "..err
+			end
+			local old_val = uprops[name]
+			if old_val ~= nil then
+				-- ensure uprops contains pairs with name = <old value>
+				local found = false
+				for _, pair in ipairs(uprops) do
+					if pair[1] == name and pair[2] == old_val then
+						found = true
+						break
+					end
+				end
+				if not found then
+					uprops[#uprops + 1] = {name, old_val}
+				end
+				uprops[#uprops + 1] = {name, value}
+			end
+			uprops[name] = value
+		else
+			-- parse property value according its identifier
+			local value
+			value, err = property_parse[prop_id](read_data)
+			if err then
+				return false, "failed to parse property "..prop_id.." value: "..err
+			end
+			if allowed[prop_id] ~= true then
+				if packet.properties[properties[prop_id]] ~= nil then
+					return false, "it is a Protocol Error to include the "..properties[prop_id].." ("..prop_id..") property more than once"
+				end
+			end
+			-- make an array of property values, if it's allowed to send multiple such properties
+			if property_multiple[prop_id] then
+				local curr = packet.properties[properties[prop_id]] or {}
+				curr[#curr + 1] = value
+				packet.properties[properties[prop_id]] = curr
+			else
+				packet.properties[properties[prop_id]] = value
+			end
+		end
+	end
+	return true
+end
+
+-- Parse CONNACK packet, DOC: 3.2 CONNACK – Connect acknowledgement
+local function parse_packet_connack(ptype, flags, input)
+	-- DOC: 3.2.1 CONNACK Fixed Header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	if input.available < 3 then
+		return false, packet_type[ptype]..": expecting data of length 3 bytes or more"
+	end
+	local read_data = input.read_func
+	-- DOC: 3.2.2 CONNACK Variable Header
+	-- DOC: 3.2.2.1.1 Session Present
+	-- DOC: 3.2.2.2 Connect Reason Code
+	local byte1, byte2 = parse_uint8(read_data), parse_uint8(read_data)
+	local sp = (band(byte1, 0x1) ~= 0)
+	local packet = setmetatable({type=ptype, sp=sp, rc=byte2}, connack_packet_mt)
+	-- DOC: 3.2.2.3 CONNACK Properties
+	local ok, err = parse_properties(ptype, read_data, input, packet)
+	if not ok then
+		return false, packet_type[ptype]..": failed to parse packet properties: "..err
+	end
+	return packet
+end
+
+-- Parse PUBLISH packet, DOC: 3.3 PUBLISH – Publish message
+local function parse_packet_publish(ptype, flags, input)
+	-- DOC: 3.3.1 PUBLISH Fixed Header
+	-- DOC: 3.3.1.1 DUP
+	local dup = (band(flags, 0x8) ~= 0)
+	-- DOC: 3.3.1.2 QoS
+	local qos = band(rshift(flags, 1), 0x3)
+	-- DOC: 3.3.1.3 RETAIN
+	local retain = (band(flags, 0x1) ~= 0)
+	-- DOC: 3.3.2 PUBLISH Variable Header
+	-- DOC: 3.3.2.1 Topic Name
+	local read_data = input.read_func
+	local topic, err = parse_string(read_data)
+	if not topic then
+		return false, packet_type[ptype]..": failed to parse topic: "..err
+	end
+	-- DOC: 3.3.2.2 Packet Identifier
+	local packet_id, ok
+	if qos > 0 then
+		packet_id, err = parse_uint16(read_data)
+		if not packet_id then
+			return false, packet_type[ptype]..": failed to parse packet_id: "..err
+		end
+	end
+	-- DOC: 3.3.2.3 PUBLISH Properties
+	local packet = setmetatable({type=ptype, dup=dup, qos=qos, retain=retain, packet_id=packet_id, topic=topic}, packet_mt)
+	ok, err = parse_properties(ptype, read_data, input, packet)
+	if not ok then
+		return false, packet_type[ptype]..": failed to parse packet properties: "..err
+	end
+	if input.available > 0 then
+		-- DOC: 3.3.3 PUBLISH Payload
+		packet.payload = read_data(input.available)
+	end
+	return packet
+end
+
+-- Parse PUBACK packet, DOC: 3.4 PUBACK – Publish acknowledgement
+local function parse_packet_puback(ptype, flags, input)
+	-- DOC: 3.4.1 PUBACK Fixed Header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	local read_data = input.read_func
+
+	-- DOC: 3.4.2 PUBACK Variable Header
+	-- Bytes 1 & 2: Packet Identifier
+	local packet_id, err = parse_uint16(read_data)
+	if not packet_id then
+		return false, packet_type[ptype]..": failed to parse packet_id: "..err
+	end
+	local packet = setmetatable({type=ptype, packet_id=packet_id, rc=0, properties={}, user_properties={}}, packet_mt)
+	-- If Remaining Length > 2, we have at least a Reason Code
+	if input.available > 0 then
+		-- DOC: 3.4.2.1 PUBACK Reason Code (Byte 3)
+		local rc, ok
+		rc, err = parse_uint8(read_data)
+		if not rc then
+			return false, packet_type[ptype]..": failed to parse rc: "..err
+		end
+		packet.rc = rc
+
+		-- DOC: 3.4.2.2.1 If the Remaining Length is less than 4 there is no Property Length and the value of 0 is used
+		if input.available > 0 then
+			-- DOC: 3.4.2.2 PUBACK Properties
+			ok, err = parse_properties(ptype, read_data, input, packet)
+			if not ok then
+				return false, packet_type[ptype]..": failed to parse packet properties: "..err
+			end
+		end
+	end
+	return packet
+end
+
+-- Parse PUBREC packet, DOC: 3.5 PUBREC – Publish received (QoS 2 delivery part 1)
+local function parse_packet_pubrec(ptype, flags, input)
+	-- DOC: 3.5.1 PUBREC Fixed Header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	local read_data = input.read_func
+	-- DOC: 3.5.2 PUBREC Variable Header
+	local packet_id, err = parse_uint16(read_data)
+	if not packet_id then
+		return false, packet_type[ptype]..": failed to parse packet_id: "..err
+	end
+	local packet = setmetatable({type=ptype, packet_id=packet_id, rc=0, properties={}, user_properties={}}, packet_mt)
+	if input.available > 0 then
+		-- DOC: 3.5.2.1 PUBREC Reason Code
+		local rc
+		rc, err = parse_uint8(read_data)
+		if not rc then
+			return false, packet_type[ptype]..": failed to parse rc: "..err
+		end
+		packet.rc = rc
+		-- DOC: 3.5.2.2.1 If the Remaining Length is less than 4 there is no Property Length and the value of 0 is used
+		if input.available > 0 then
+			-- DOC: 3.5.2.2 PUBREC Properties
+			local ok
+			ok, err = parse_properties(ptype, read_data, input, packet)
+			if not ok then
+				return false, packet_type[ptype]..": failed to parse packet properties: "..err
+			end
+		end
+	end
+	return packet
+end
+
+-- Parse PUBREL packet, DOC: 3.6 PUBREL – Publish release (QoS 2 delivery part 2)
+local function parse_packet_pubrel(ptype, flags, input)
+	-- DOC: 3.6.1 PUBREL Fixed Header
+	if flags ~= 2 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	local read_data = input.read_func
+	-- DOC: 3.6.2 PUBREL Variable Header
+	local packet_id, err = parse_uint16(read_data)
+	if not packet_id then
+		return false, packet_type[ptype]..": failed to parse packet_id: "..err
+	end
+	local packet = setmetatable({type=ptype, packet_id=packet_id, rc=0, properties={}, user_properties={}}, packet_mt)
+	if input.available > 0 then
+		-- DOC: 3.6.2.1 PUBREL Reason Code
+		local rc
+		rc, err = parse_uint8(read_data)
+		if not rc then
+			return false, packet_type[ptype]..": failed to parse rc: "..err
+		end
+		packet.rc = rc
+		-- DOC: 3.6.2.2.1 If the Remaining Length is less than 4 there is no Property Length and the value of 0 is used
+		if input.available > 0 then
+			-- DOC: 3.6.2.2 PUBREL Properties
+			local ok
+			ok, err = parse_properties(ptype, read_data, input, packet)
+			if not ok then
+				return false, packet_type[ptype]..": failed to parse packet properties: "..err
+			end
+		end
+	end
+	return packet
+end
+
+-- Parse PUBCOMP packet, DOC: 3.7 PUBCOMP – Publish complete (QoS 2 delivery part 3)
+local function parse_packet_pubcomp(ptype, flags, input)
+	-- DOC: 3.7.1 PUBCOMP Fixed Header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	local read_data = input.read_func
+	-- DOC: 3.7.2 PUBCOMP Variable Header
+	local packet_id, err = parse_uint16(read_data)
+	if not packet_id then
+		return false, packet_type[ptype]..": failed to parse packet_id: "..err
+	end
+	local packet = setmetatable({type=ptype, packet_id=packet_id, rc=0, properties={}, user_properties={}}, packet_mt)
+	if input.available > 0 then
+		-- DOC: 3.7.2.1 PUBCOMP Reason Code
+		local rc
+		rc, err = parse_uint8(read_data)
+		if not rc then
+			return false, packet_type[ptype]..": failed to parse rc: "..err
+		end
+		packet.rc = rc
+		-- DOC: 3.7.2.2.1 If the Remaining Length is less than 4 there is no Property Length and the value of 0 is used
+		if input.available > 0 then
+			-- DOC: 3.7.2.2 PUBCOMP Properties
+			local ok
+			ok, err = parse_properties(ptype, read_data, input, packet)
+			if not ok then
+				return false, packet_type[ptype]..": failed to parse packet properties: "..err
+			end
+		end
+	end
+	return packet
+end
+
+-- Parse SUBSCRIBE packet, DOC: 3.8 SUBSCRIBE - Subscribe request
+local function parse_packet_subscribe(ptype, flags, input)
+	-- DOC: 3.8.1 SUBSCRIBE Fixed Header
+	if flags ~= 2 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	local read_data = input.read_func
+	-- DOC: 3.8.2 SUBSCRIBE Variable Header
+	local packet_id, err = parse_uint16(read_data)
+	if not packet_id then
+		return false, packet_type[ptype]..": failed to parse packet_id: "..err
+	end
+	local packet = setmetatable({type=ptype, packet_id=packet_id, properties={}, user_properties={}}, packet_mt)
+	-- DOC: 3.8.2.1 SUBSCRIBE Properties
+	local ok
+	ok, err = parse_properties(ptype, read_data, input, packet)
+	if not ok then
+		return false, packet_type[ptype]..": failed to parse packet properties: "..err
+	end
+	-- DOC: 3.8.3 SUBSCRIBE Payload
+	if input.available == 0 then
+		-- DOC: A SUBSCRIBE packet with no Payload is a Protocol Error.
+		return false, packet_type[ptype]..": empty subscriptions list"
+	end
+	local subscriptions = {}
+	while input.available > 0 do
+		local topic_filter
+		topic_filter, err = parse_string(input.read_func)
+		if not topic_filter then
+			return false, packet_type[ptype]..": failed to parse SUBSCRIBE topic filter: "..err
+		end
+		-- DOC: 3.8.3.1 Subscription Options
+		local subscription_options
+		subscription_options, err = parse_uint8(input.read_func)
+		if not subscription_options then
+			return false, packet_type[ptype]..": failed to parse subscription_options: "..err
+		end
+		subscriptions[#subscriptions + 1] = {
+			topic = topic_filter,
+			qos = band(subscription_options, 0x3),
+			no_local = band(subscription_options, 0x4) ~= 0,
+			retain_as_published = band(subscription_options, 0x8) ~= 0, -- Retain As Published
+			retain_handling = band(rshift(subscription_options, 4), 0x3), -- Retain Handling
+		}
+	end
+	packet.subscriptions = subscriptions
+	return packet
+end
+
+-- SUBACK return codes/reason code strings
+-- DOC: Table 3‑8 - Subscribe Reason Codes
+local suback_rc = {
+	[0x00] = "Granted QoS 0",
+	[0x01] = "Granted QoS 1",
+	[0x02] = "Granted QoS 2",
+	[0x80] = "Unspecified error",
+	[0x83] = "Implementation specific error",
+	[0x87] = "Not authorized",
+	[0x8F] = "Topic Filter invalid",
+	[0x91] = "Packet Identifier in use",
+	[0x97] = "Quota exceeded",
+	[0x9E] = "Shared Subscriptions not supported",
+	[0xA1] = "Subscription Identifiers not supported",
+	[0xA2] = "Wildcard Subscriptions not supported",
+}
+protocol5.suback_rc = suback_rc
+
+--- Parsed SUBACK packet metatable
+local suback_packet_mt = {
+	__tostring = protocol.packet_tostring, -- packet-to-human-readable-string conversion metamethod using protocol.packet_tostring()
+	reason_strings = function(self) -- Returns reason strings for the SUBACK packet according to its rc field
+		local human_readable = {}
+		for i, rc in ipairs(self.rc) do
+			local reason_string = suback_rc[rc]
+			if reason_string then
+				human_readable[i] = reason_string
+			else
+				human_readable[i] = "Unknown: "..tostring(rc)
+			end
+		end
+		return human_readable
+	end,
+}
+suback_packet_mt.__index = suback_packet_mt
+protocol5.suback_packet_mt = suback_packet_mt
+
+-- Parse SUBACK packet, DOC: 3.9 SUBACK – Subscribe acknowledgement
+local function parse_packet_suback(ptype, flags, input)
+	-- DOC: 3.9.1 SUBACK Fixed Header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	local read_data = input.read_func
+	-- DOC: 3.9.2 SUBACK Variable Header
+	local packet_id, err = parse_uint16(read_data)
+	if not packet_id then
+		return false, packet_type[ptype]..": failed to parse packet_id: "..err
+	end
+	-- DOC: 3.9.2.1 SUBACK Properties
+	local packet = setmetatable({type=ptype, packet_id=packet_id}, suback_packet_mt)
+	local ok
+	ok, err = parse_properties(ptype, read_data, input, packet)
+	if not ok then
+		return false, packet_type[ptype]..": failed to parse packet properties: "..err
+	end
+	-- DOC: 3.9.3 SUBACK Payload
+	local rcs = {}
+	while input.available > 0 do
+		local rc
+		rc, err = parse_uint8(read_data)
+		if not rc then
+			return false, packet_type[ptype]..": failed to parse reason code: "..err
+		end
+		rcs[#rcs + 1] = rc
+	end
+	if not next(rcs) then
+		return false, packet_type[ptype]..": expecting at least one reason code"
+	end
+	packet.rc = rcs
+	return packet
+end
+
+-- Parse UNSUBSCRIBE packet, DOC: 3.10 UNSUBSCRIBE – Unsubscribe request
+local function parse_packet_unsubscribe(ptype, flags, input)
+	-- DOC: 3.10.1 UNSUBSCRIBE Fixed Header
+	if flags ~= 2 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	local read_data = input.read_func
+	-- DOC: 3.10.2 UNSUBSCRIBE Variable Header
+	local packet_id, err = parse_uint16(read_data)
+	if not packet_id then
+		return false, packet_type[ptype]..": failed to parse packet_id: "..err
+	end
+	local packet = setmetatable({type=ptype, packet_id=packet_id, properties={}, user_properties={}}, packet_mt)
+	-- DOC: 3.10.2.1 UNSUBSCRIBE Properties
+	local ok
+	ok, err = parse_properties(ptype, read_data, input, packet)
+	if not ok then
+		return false, packet_type[ptype]..": failed to parse packet properties: "..err
+	end
+	-- 3.10.3 UNSUBSCRIBE Payload
+	-- DOC: An UNSUBSCRIBE packet with no Payload is a Protocol Error.
+	if input.available == 0 then
+		return false, packet_type[ptype]..": empty subscriptions list"
+	end
+	local subscriptions = {}
+	while input.available > 0 do
+		local topic_filter
+		topic_filter, err = parse_string(input.read_func)
+		if not topic_filter then
+			return false, packet_type[ptype]..": failed to parse topic filter: "..err
+		end
+		subscriptions[#subscriptions + 1] = topic_filter
+	end
+	packet.subscriptions = subscriptions
+	return packet
+end
+
+-- UNSUBACK Reason Codes
+-- DOC[2]: Table 3‑9 - Unsubscribe Reason Codes
+local unsuback_rc = {
+	[0x00] = "Success",
+	[0x11] = "No subscription existed",
+	[0x80] = "Unspecified error",
+	[0x83] = "Implementation specific error",
+	[0x87] = "Not authorized",
+	[0x8F] = "Topic Filter invalid",
+	[0x91] = "Packet Identifier in use",
+}
+protocol5.unsuback_rc = unsuback_rc
+
+--- Parsed UNSUBACK packet metatable
+local unsuback_packet_mt = {
+	__tostring = protocol.packet_tostring, -- packet-to-human-readable-string conversion metamethod using protocol.packet_tostring()
+	reason_strings = function(self) -- Returns reason strings for the UNSUBACK packet according to its rc field
+		local human_readable = {}
+		for i, rc in ipairs(self.rc) do
+			local reason_string = unsuback_rc[rc]
+			if reason_string then
+				human_readable[i] = reason_string
+			else
+				human_readable[i] = "Unknown: "..tostring(rc)
+			end
+		end
+		return human_readable
+	end,
+}
+unsuback_packet_mt.__index = unsuback_packet_mt
+protocol5.unsuback_packet_mt = unsuback_packet_mt
+
+-- Parse UNSUBACK packet, DOC: 3.11 UNSUBACK – Unsubscribe acknowledgement
+local function parse_packet_unsuback(ptype, flags, input)
+	-- DOC: 3.11.1 UNSUBACK Fixed Header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	local read_data = input.read_func
+	-- DOC: 3.11.2 UNSUBACK Variable Header
+	local packet_id, err = parse_uint16(read_data)
+	if not packet_id then
+		return false, packet_type[ptype]..": failed to parse packet_id: "..err
+	end
+	-- 3.11.2.1 UNSUBACK Properties
+	local packet = setmetatable({type=ptype, packet_id=packet_id}, unsuback_packet_mt)
+	local ok
+	ok, err = parse_properties(ptype, read_data, input, packet)
+	if not ok then
+		return false, packet_type[ptype]..": failed to parse packet properties: "..err
+	end
+	-- 3.11.3 UNSUBACK Payload
+	local rcs = {}
+	while input.available > 0 do
+		local rc
+		rc, err = parse_uint8(read_data)
+		if not rc then
+			return false, packet_type[ptype]..": failed to parse reason code: "..err
+		end
+		rcs[#rcs + 1] = rc
+	end
+	if not next(rcs) then
+		return false, packet_type[ptype]..": expecting at least one reason code in"
+	end
+	packet.rc = rcs
+	return packet
+end
+
+-- Parse PINGREQ packet, DOC: 3.12 PINGREQ – PING request
+local function parse_packet_pingreq(ptype, flags, input_)
+	-- DOC: 3.12.1 PINGREQ Fixed Header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	return setmetatable({type=ptype, properties={}, user_properties={}}, packet_mt)
+end
+
+-- Parse PINGRESP packet, DOC: 3.13 PINGRESP – PING response
+local function parse_packet_pingresp(ptype, flags, input_)
+	-- DOC: 3.13.1 PINGRESP Fixed Header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	return setmetatable({type=ptype, properties={}, user_properties={}}, packet_mt)
+end
+
+-- DISCONNECT reason codes
+-- DOC: Table 3‑10 – Disconnect Reason Code values
+local disconnect_rc = {
+	[0x00] = "Normal disconnection",
+	[0x04] = "Disconnect with Will Message",
+	[0x80] = "Unspecified error",
+	[0x81] = "Malformed Packet",
+	[0x82] = "Protocol Error",
+	[0x83] = "Implementation specific error",
+	[0x87] = "Not authorized",
+	[0x89] = "Server busy",
+	[0x8B] = "Server shutting down",
+	[0x8D] = "Keep Alive timeout",
+	[0x8E] = "Session taken over",
+	[0x8F] = "Topic Filter invalid",
+	[0x90] = "Topic Name invalid",
+	[0x93] = "Receive Maximum exceeded",
+	[0x94] = "Topic Alias invalid",
+	[0x95] = "Packet too large",
+	[0x96] = "Message rate too high",
+	[0x97] = "Quota exceeded",
+	[0x98] = "Administrative action",
+	[0x99] = "Payload format invalid",
+	[0x9A] = "Retain not supported",
+	[0x9B] = "QoS not supported",
+	[0x9C] = "Use another server",
+	[0x9D] = "Server moved",
+	[0x9E] = "Shared Subscriptions not supported",
+	[0x9F] = "Connection rate exceeded",
+	[0xA0] = "Maximum connect time",
+	[0xA1] = "Subscription Identifiers not supported",
+	[0xA2] = "Wildcard Subscriptions not supported",
+}
+protocol5.disconnect_rc = disconnect_rc
+
+--- Parsed DISCONNECT packet metatable
+local disconnect_packet_mt = {
+	__tostring = protocol.packet_tostring, -- packet-to-human-readable-string conversion metamethod using protocol.packet_tostring()
+	reason_string = function(self) -- Returns reason string for the DISCONNECT packet according to its rc field
+		local reason_string = disconnect_rc[self.rc]
+		if not reason_string then
+			reason_string = "Unknown: "..self.rc
+		end
+		return reason_string
+	end,
+}
+disconnect_packet_mt.__index = disconnect_packet_mt
+protocol5.disconnect_packet_mt = disconnect_packet_mt
+
+-- Parse DISCONNECT packet, DOC: 3.14 DISCONNECT – Disconnect notification
+local function parse_packet_disconnect(ptype, flags, input)
+	-- DOC: 3.14.1 DISCONNECT Fixed Header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	local read_data = input.read_func
+	local packet = setmetatable({type=ptype, rc=0, properties={}, user_properties={}}, disconnect_packet_mt)
+	if input.available > 0 then
+		-- DOC: 3.14.2 DISCONNECT Variable Header
+		-- DOC: 3.14.2.1 Disconnect Reason Code
+		local rc, err = parse_uint8(read_data)
+		if not rc then
+			return false, packet_type[ptype]..": failed to parse rc: "..err
+		end
+		packet.rc = rc
+		-- DOC: 3.14.2.2.1 If the Remaining Length is less than 2, a value of 0 is used
+		if input.available > 0 then
+			-- DOC: 3.14.2.2 DISCONNECT Properties
+			local ok
+			ok, err = parse_properties(ptype, read_data, input, packet)
+			if not ok then
+				return false, packet_type[ptype]..": failed to parse packet properties: "..err
+			end
+		end
+	end
+	return packet
+end
+
+-- Parse AUTH packet, DOC: 3.15 AUTH – Authentication exchange
+local function parse_packet_auth(ptype, flags, input)
+	-- DOC: 3.15.1 AUTH Fixed Header
+	if flags ~= 0 then -- Reserved
+		return false, packet_type[ptype]..": unexpected flags value: "..flags
+	end
+	local read_data = input.read_func
+	-- DOC: 3.15.2.1 Authenticate Reason Code
+	local packet = setmetatable({type=ptype, rc=0, properties={}, user_properties={}}, packet_mt)
+	if input.available > 1 then
+		-- DOC: 3.15.2 AUTH Variable Header
+		local rc, err = parse_uint8(read_data)
+		if not rc then
+			return false, packet_type[ptype]..": failed to parse Authenticate Reason Code: "..err
+		end
+		packet.rc = rc
+		-- DOC: 3.15.2.2 AUTH Properties
+		local ok
+		ok, err = parse_properties(ptype, read_data, input, packet)
+		if not ok then
+			return false, packet_type[ptype]..": failed to parse packet properties: "..err
+		end
+	end
+	return packet
+end
+
+-- Parse packet using given read_func
+-- Returns packet on success or false and error message on failure
+function protocol5.parse_packet(read_func)
+	local ptype, flags, input = start_parse_packet(read_func)
+	if not ptype then
+		return false, flags
+	end
+	local packet, err
+
+	-- parse read data according type in fixed header
+	if ptype == packet_type.CONNECT then			-- 1
+		packet, err = parse_packet_connect_input(input, const_v50)
+	elseif ptype == packet_type.CONNACK then		-- 2
+		packet, err = parse_packet_connack(ptype, flags, input)
+	elseif ptype == packet_type.PUBLISH then		-- 3
+		packet, err = parse_packet_publish(ptype, flags, input)
+	elseif ptype == packet_type.PUBACK then			-- 4
+		packet, err = parse_packet_puback(ptype, flags, input)
+	elseif ptype == packet_type.PUBREC then			-- 5
+		packet, err = parse_packet_pubrec(ptype, flags, input)
+	elseif ptype == packet_type.PUBREL then			-- 6
+		packet, err = parse_packet_pubrel(ptype, flags, input)
+	elseif ptype == packet_type.PUBCOMP then		-- 7
+		packet, err = parse_packet_pubcomp(ptype, flags, input)
+	elseif ptype == packet_type.SUBSCRIBE then		-- 8
+		packet, err = parse_packet_subscribe(ptype, flags, input)
+	elseif ptype == packet_type.SUBACK then			-- 9
+		packet, err = parse_packet_suback(ptype, flags, input)
+	elseif ptype == packet_type.UNSUBSCRIBE then	-- 10
+		packet, err = parse_packet_unsubscribe(ptype, flags, input)
+	elseif ptype == packet_type.UNSUBACK then		-- 11
+		packet, err = parse_packet_unsuback(ptype, flags, input)
+	elseif ptype == packet_type.PINGREQ then		-- 12
+		packet, err = parse_packet_pingreq(ptype, flags, input)
+	elseif ptype == packet_type.PINGRESP then		-- 13
+		packet, err = parse_packet_pingresp(ptype, flags, input)
+	elseif ptype == packet_type.DISCONNECT then		-- 14
+		packet, err = parse_packet_disconnect(ptype, flags, input)
+	elseif ptype == packet_type.AUTH then			-- 15
+		packet, err = parse_packet_auth(ptype, flags, input)
+	else
+		return false, "unexpected packet type received: "..tostring(ptype)
+	end
+	if packet and input.available > 0 then
+		return false, packet_type[ptype]..": extra data in remaining length left after packet parsing"
+	end
+	return packet, err
+end
+
+-- Continue parsing of the MQTT v5.0 CONNECT packet
+-- Internally called from the protocol.parse_packet_connect_input() function
+-- Returns packet on success or false and error message on failure
+function protocol5._parse_packet_connect_continue(input, packet)
+	local read_func = input.read_func
+	local ok, client_id, err
+
+	-- DOC: 3.1.2.11 CONNECT Properties
+	ok, err = parse_properties(packet_type.CONNECT, read_func, input, packet)
+	if not ok then
+		return false, "CONNECT: failed to parse packet properties: "..err
+	end
+
+	-- DOC: 3.1.3 CONNECT Payload
+
+	-- DOC: 3.1.3.1 Client Identifier (ClientID)
+	client_id, err = parse_string(read_func)
+	if not client_id then
+		return false, "CONNECT: failed to parse client_id: "..err
+	end
+	packet.id = client_id
+
+	local will = packet.will
+	if will then
+		-- DOC: 3.1.3.2 Will Properties
+		ok, err = parse_properties("will", read_func, input, will)
+		if not ok then
+			return false, "CONNECT: failed to parse will message properties: "..err
+		end
+
+		-- DOC: 3.1.3.3 Will Topic
+		local will_topic, will_payload
+		will_topic, err = parse_string(read_func)
+		if not will_topic then
+			return false, "CONNECT: failed to parse will_topic: "..err
+		end
+		will.topic = will_topic
+
+		-- DOC: 3.1.3.4 Will Payload
+		will_payload, err = parse_string(read_func)
+		if not will_payload then
+			return false, "CONNECT: failed to parse will_payload: "..err
+		end
+		will.payload = will_payload
+	end
+
+	-- DOC: 3.1.3.5 User Name
+	if packet.username then
+		local username
+		username, err = parse_string(read_func)
+		if not username then
+			return false, "CONNECT: failed to parse username: "..err
+		end
+		packet.username = username
+	else
+		packet.username = nil
+	end
+
+	-- DOC: 3.1.3.6 Password
+	if packet.password then
+		local password
+		password, err = parse_string(read_func)
+		if not password then
+			return false, "CONNECT: failed to parse password: "..err
+		end
+		packet.password = password
+	else
+		packet.password = nil
+	end
+
+	return setmetatable(packet, packet_mt)
+end
+
+-- export module table
+return protocol5
+
+-- vim: ts=4 sts=4 sw=4 noet ft=lua
+
+end
+Loaders["qsys_mqtt.tls"] = function()
+-- Explicit per-socket TLS credentials. Files are reread for every connection.
+local Tls = {}
+local Limit = 131072
+local Fields = { "CaCertificate", "ClientCertificate", "ClientKey" }
+
+local function FilePath(path)
+  if
+    type(path) ~= "string"
+    or #path == 0
+    or #path > 512
+    or path:find("[%c\\:]")
+    or path:find("//", 1, true)
+    or not (path:sub(1, 6) == "media/" or path:sub(1, 7) == "design/")
+  then
+    return false
+  end
+  for segment in path:gmatch("[^/]+") do
+    if segment == "." or segment == ".." then
+      return false
+    end
+  end
+  return path:sub(-1) ~= "/"
+end
+
+function Tls.Validate(options)
+  for _, name in ipairs(Fields) do
+    local data, path = options[name], options[name .. "File"]
+    if data == "" then
+      data = nil
+      options[name] = nil
+    end
+    if path ~= nil and not FilePath(path) then
+      return nil, "invalid-certificate-path"
+    end
+    if data ~= nil and (type(data) ~= "string" or #data > Limit) then
+      return nil, "invalid-certificate-data"
+    end
+    if data and path then
+      return nil, "certificate-source-conflict"
+    end
+  end
+  local cert = options.ClientCertificate or options.ClientCertificateFile
+  local key = options.ClientKey or options.ClientKeyFile
+  if (cert and not key) or (key and not cert) then
+    return nil, "client-certificate-key-required"
+  end
+  if cert and not options.Tls then
+    return nil, "client-certificate-requires-tls"
+  end
+  if options.Tls and not (options.CaCertificate or options.CaCertificateFile) then
+    return nil, "ca-certificate-required"
+  end
+  return true
+end
+
+local function ReadFile(path)
+  local opened, file = pcall(function()
+    return io.open(path, "rb")
+  end)
+  if not opened or not file then
+    return nil, "file-open-failed"
+  end
+  local read, data = pcall(function()
+    return file:read(Limit + 1)
+  end)
+  local closed, closeResult = pcall(function()
+    return file:close()
+  end)
+  if not read or not closed or not closeResult then
+    return nil, "file-read-failed"
+  end
+  if type(data) ~= "string" or #data == 0 then
+    return nil, "file-empty"
+  end
+  if #data > Limit then
+    return nil, "file-too-large"
+  end
+  return data
+end
+
+local function Pem(data, key)
+  if data:find("%z") then
+    return false
+  end
+  local labels = key and { "PRIVATE KEY", "RSA PRIVATE KEY", "EC PRIVATE KEY" } or { "CERTIFICATE" }
+  if key and (data:find("ENCRYPTED", 1, true) or data:find("Proc-Type:", 1, true)) then
+    return false
+  end
+  for _, label in ipairs(labels) do
+    local start = data:find("-----BEGIN " .. label .. "-----", 1, true)
+    local finish = data:find("-----END " .. label .. "-----", 1, true)
+    if start and finish and finish > start then
+      return true
+    end
+  end
+  return false
+end
+
+function Tls.Load(options)
+  local result = {}
+  for index, name in ipairs(Fields) do
+    local data = options[name]
+    local reason
+    if options[name .. "File"] then
+      data, reason = ReadFile(options[name .. "File"])
+    end
+    local label = ({ "ca", "client-cert", "client-key" })[index]
+    if reason then
+      return nil, label .. "-" .. reason
+    end
+    if data and not Pem(data, name == "ClientKey") then
+      return nil, label .. "-invalid-pem"
+    end
+    result[name] = data
+  end
+  return result
+end
+
+return Tls
+
+end
+Loaders["qsys_mqtt.v5"] = function()
+local require = Require
+-- Additional validation around the unmodified luamqtt 5.0 codec.
+-- Bounds and single-occurrence rules are checked before decoding properties.
+local Protocol = require("mqtt.protocol5")
+local Packet = require("mqtt.protocol").packet_type
+local Mqtt5 = {}
+
+local Widths = {
+  [0x01] = 1,
+  [0x02] = 4,
+  [0x03] = "text",
+  [0x08] = "text",
+  [0x09] = "binary",
+  [0x0B] = "variable",
+  [0x11] = 4,
+  [0x12] = "text",
+  [0x13] = 2,
+  [0x15] = "text",
+  [0x16] = "binary",
+  [0x17] = 1,
+  [0x18] = 4,
+  [0x19] = 1,
+  [0x1A] = "text",
+  [0x1C] = "text",
+  [0x1F] = "text",
+  [0x21] = 2,
+  [0x22] = 2,
+  [0x23] = 2,
+  [0x24] = 1,
+  [0x25] = 1,
+  [0x26] = "pair",
+  [0x27] = 4,
+  [0x28] = 1,
+  [0x29] = 1,
+  [0x2A] = 1,
+}
+
+function Mqtt5.ValidateFrame(frame, bodyStart, utf8)
+  local kind = math.floor(frame:byte(1) / 16)
+  local position = bodyStart
+  local boundary = #frame + 1
+  local function Take(count)
+    assert(position + count <= boundary, "property-boundary")
+    local data = frame:sub(position, position + count - 1)
+    position = position + count
+    return data
+  end
+  local function Variable()
+    local value, multiplier = 0, 1
+    for index = 1, 4 do
+      local byte = Take(1):byte()
+      value = value + (byte % 128) * multiplier
+      if byte < 128 then
+        assert(index == 1 or byte ~= 0, "noncanonical-property-length")
+        return value
+      end
+      multiplier = multiplier * 128
+    end
+    error("property-length")
+  end
+  local function String(isText)
+    local length = Take(2)
+    local value = Take(length:byte(1) * 256 + length:byte(2))
+    assert(not isText or utf8(value, true), "property-utf8")
+  end
+  if kind == Packet.PINGRESP then
+    assert(position == boundary, "pingresp-length")
+    return
+  elseif kind == Packet.CONNACK then
+    Take(2)
+  elseif kind == Packet.PUBLISH then
+    String(true)
+    local qos = math.floor(frame:byte(1) / 2) % 4
+    if qos > 0 then
+      Take(2)
+    end
+  elseif kind == Packet.SUBACK or kind == Packet.UNSUBACK then
+    Take(2)
+  elseif kind == Packet.PUBACK then
+    Take(2)
+    if position == boundary then
+      return
+    end
+    Take(1)
+    if position == boundary then
+      return
+    end
+  elseif kind == Packet.DISCONNECT then
+    if position == boundary then
+      return
+    end
+    Take(1)
+    if position == boundary then
+      return
+    end
+  else
+    error("unsupported-server-packet")
+  end
+  local length = Variable()
+  local propertiesEnd = position + length
+  assert(propertiesEnd <= boundary, "property-length")
+  boundary = propertiesEnd
+  local seen = {}
+  while position < propertiesEnd do
+    local id = Variable()
+    local width = assert(Widths[id], "unknown-property")
+    assert(
+      not seen[id] or id == 0x26 or (id == 0x0B and kind == Packet.PUBLISH),
+      "duplicate-property"
+    )
+    seen[id] = true
+    if width == "pair" then
+      String(true)
+      String(true)
+    elseif width == "text" or width == "binary" then
+      String(width == "text")
+    elseif width == "variable" then
+      assert(Variable() > 0, "zero-subscription-id")
+    else
+      Take(width)
+    end
+  end
+  assert(position == propertiesEnd, "property-boundary")
+  if kind == Packet.CONNACK or kind == Packet.PUBACK or kind == Packet.DISCONNECT then
+    assert(position == #frame + 1, "unexpected-payload")
+  elseif kind == Packet.SUBACK or kind == Packet.UNSUBACK then
+    -- Each request in this client carries exactly one topic/filter.
+    assert(position == #frame, "ack-reason-count")
+  end
+end
+
+local ConnackCodes = {
+  [0] = true,
+  [128] = true,
+  [129] = true,
+  [130] = true,
+  [131] = true,
+  [132] = true,
+  [133] = true,
+  [134] = true,
+  [135] = true,
+  [136] = true,
+  [137] = true,
+  [138] = true,
+  [140] = true,
+  [144] = true,
+  [149] = true,
+  [151] = true,
+  [153] = true,
+  [154] = true,
+  [155] = true,
+  [156] = true,
+  [157] = true,
+  [159] = true,
+}
+local PubackCodes = {
+  [0] = true,
+  [16] = true,
+  [128] = true,
+  [131] = true,
+  [135] = true,
+  [144] = true,
+  [145] = true,
+  [151] = true,
+  [153] = true,
+}
+
+function Mqtt5.ValidatePacket(packet, topic)
+  local kind = packet.type
+  local props = packet.properties or {}
+  if kind == Packet.CONNACK then
+    assert(ConnackCodes[packet.rc], "connack-code")
+    assert(props.receive_maximum ~= 0, "receive-maximum-zero")
+    assert(props.maximum_packet_size ~= 0, "maximum-packet-zero")
+    assert(
+      not props.authentication_method and not props.authentication_data,
+      "unsolicited-authentication"
+    )
+    assert(not props.assigned_client_identifier, "unsolicited-assigned-id")
+    assert(not props.response_information, "unsolicited-response-information")
+  elseif kind == Packet.PUBLISH then
+    -- CONNECT advertises no aliases and SUBSCRIBE does not assign identifiers.
+    assert(
+      not props.topic_alias and not props.subscription_identifiers,
+      "unrequested-publish-feature"
+    )
+    assert(not props.response_topic or topic(props.response_topic, false), "response-topic")
+  elseif kind == Packet.PUBACK then
+    assert(PubackCodes[packet.rc], "puback-code")
+  elseif kind == Packet.SUBACK then
+    assert(#packet.rc == 1 and Protocol.suback_rc[packet.rc[1]], "suback-code")
+  elseif kind == Packet.UNSUBACK then
+    assert(#packet.rc == 1 and Protocol.unsuback_rc[packet.rc[1]], "unsuback-code")
+  elseif kind == Packet.DISCONNECT then
+    assert(Protocol.disconnect_rc[packet.rc] and packet.rc ~= 4, "disconnect-code")
+    assert(not props.session_expiry_interval, "server-session-expiry")
+  end
+end
+
+return Mqtt5
+
+end
+Loaders["qsys_mqtt"] = function()
+local require = Require
+-- Q-SYS MQTT 3.1.1 / 5.0 client. Private module state is intentional.
+-- Keep the returned client in a script-global variable/table to retain host objects.
+local Protocol4 = require("mqtt.protocol4")
+local Protocol5 = require("mqtt.protocol5")
+local Mqtt5 = require("qsys_mqtt.v5")
+local Tls = require("qsys_mqtt.tls")
+local Packet = require("mqtt.protocol").packet_type
+local Mqtt = { Version = "0.3.0" }
+local Client = {}
+Client.__index = Client
+
+--*** Input validation ***
+local function Integer(value, minimum, maximum)
+  return type(value) == "number"
+    and value == math.floor(value)
+    and value >= minimum
+    and value <= maximum
+end
+
+local function Utf8(value, allowEmpty)
+  if type(value) ~= "string" or #value > 65535 or (not allowEmpty and #value == 0) then
+    return false
+  end
+  local index = 1
+  while index <= #value do
+    local first = value:byte(index)
+    local count, code, minimum = 1, first, 0
+    if first >= 0xC2 and first <= 0xDF then
+      count, code, minimum = 2, first - 0xC0, 0x80
+    elseif first >= 0xE0 and first <= 0xEF then
+      count, code, minimum = 3, first - 0xE0, 0x800
+    elseif first >= 0xF0 and first <= 0xF4 then
+      count, code, minimum = 4, first - 0xF0, 0x10000
+    elseif first == 0 or first >= 0x80 then
+      return false
+    end
+    for offset = 1, count - 1 do
+      local byte = value:byte(index + offset)
+      if not byte or byte < 0x80 or byte > 0xBF then
+        return false
+      end
+      code = code * 64 + byte - 0x80
+    end
+    if code < minimum or code > 0x10FFFF or (code >= 0xD800 and code <= 0xDFFF) then
+      return false
+    end
+    index = index + count
+  end
+  return true
+end
+
+local function Topic(value, filter)
+  if not Utf8(value, false) then
+    return false
+  end
+  if not filter then
+    return not value:find("[+#]")
+  end
+  for level in (value .. "/"):gmatch("(.-)/") do
+    if
+      (level:find("+", 1, true) and level ~= "+")
+      or (level:find("#", 1, true) and level ~= "#")
+    then
+      return false
+    end
+  end
+  local hash = value:find("#", 1, true)
+  return not hash or hash == #value
+end
+
+function Mqtt.TopicMatches(filter, topic)
+  if not Topic(filter, true) or not Topic(topic, false) then
+    return false
+  end
+  if topic:sub(1, 1) == "$" and filter:sub(1, 1) ~= "$" then
+    return false
+  end
+  local levels = {}
+  for level in (topic .. "/"):gmatch("(.-)/") do
+    levels[#levels + 1] = level
+  end
+  local index = 1
+  for level in (filter .. "/"):gmatch("(.-)/") do
+    if level == "#" then
+      return true
+    end
+    if levels[index] == nil or (level ~= "+" and level ~= levels[index]) then
+      return false
+    end
+    index = index + 1
+  end
+  return index == #levels + 1
+end
+
+local function Call(self, callback, ...)
+  if callback then
+    local ok = pcall(callback, self, ...)
+    if not ok and callback ~= self.OnError and self.OnError then
+      pcall(self.OnError, self, "callback-error")
+    end
+  end
+end
+
+function Client:_State(state, reason)
+  self.State = state
+  Call(self, self.OnState, state, reason)
+end
+
+function Client:_Trace(direction, kind, size)
+  -- Never expose payloads, credentials, certificates or raw CONNECT bytes.
+  Call(self, self.OnTrace, direction, Packet[kind] or "UNKNOWN", size)
+end
+
+--*** Transport lifetime and recovery ***
+-- Q-SYS callback setters require functions, including when retiring a host object.
+local function IgnoreEvent() end
+function Client:_Release()
+  self.Epoch = self.Epoch + 1
+  if self.Socket then
+    local socket = self.Socket
+    self.Socket = nil
+    socket.Connected = IgnoreEvent
+    socket.Data = IgnoreEvent
+    socket.Closed = IgnoreEvent
+    socket.Error = IgnoreEvent
+    socket.Timeout = IgnoreEvent
+    socket.Reconnect = IgnoreEvent
+    pcall(function()
+      socket:Disconnect()
+    end)
+  end
+  self.WorkTimer:Stop()
+  self.Buffer = ""
+  self.FrameSince = nil
+  self.PingAt = nil
+  self.Pumping = false
+end
+
+function Client:_FailPending(reason)
+  local pending = self.Pending
+  self.Pending = {}
+  self.PendingCount = 0
+  for _, operation in pairs(pending) do
+    Call(self, operation.Callback, false, reason)
+  end
+end
+
+function Client:_Lost(reason)
+  if self.Closing or self.State == "Disconnected" or self.State == "Reconnecting" then
+    return
+  end
+  self.Closing = true
+  self:_Release()
+  self.RetryAt = self.Now() + self.RetryDelay
+  self.RetryDelay = math.min(self.RetryDelay * 2, 30)
+  self.State = self.Wanted and "Reconnecting" or "Disconnected"
+  self:_FailPending("unconfirmed: " .. reason)
+  if not self.Wanted then
+    self.State = "Disconnected"
+  end
+  self.Closing = false
+  self:_State(self.State, reason)
+end
+
+function Client:_Send(args)
+  local epoch = self.Epoch
+  if not self.Socket or not self.Socket.IsConnected then
+    return nil, "not-connected"
+  end
+  if self.IsV5 and (args.type == Packet.PUBACK or args.type == Packet.DISCONNECT) then
+    args.rc = args.rc or 0
+  end
+  local ok, data = pcall(function()
+    return tostring(self.Protocol.make_packet(args))
+  end)
+  if not ok then
+    return nil, "invalid-packet"
+  end
+  if #data > math.min(self.Options.MaxPacketBytes, self.ServerPacketLimit) then
+    return nil, "packet-too-large"
+  end
+  ok = pcall(function()
+    self.Socket:Write(data)
+  end)
+  if not ok then
+    self:_Lost("write-failed")
+    return nil, "write-failed"
+  end
+  self.LastWrite = self.Now()
+  self:_Trace("Tx", args.type, #data)
+  if epoch ~= self.Epoch or self.Disposed then
+    return nil, "connection-changed"
+  end
+  return true
+end
+
+function Client:_Open()
+  self:_Release()
+  self.ServerPacketLimit = self.Options.MaxPacketBytes
+  self.ServerReceiveMaximum = 65535
+  self.ServerMaximumQos = 2
+  self.ServerRetainAvailable = true
+  self.ServerWildcardAvailable = true
+  self.EffectiveKeepAlive = self.Options.KeepAlive
+  self.ServerProperties = {}
+  self.State = "Connecting"
+  self.Deadline = self.Now() + self.Options.Timeout
+  local epoch = self.Epoch
+  local credentials
+  if self.Options.Tls then
+    local reason
+    credentials, reason = Tls.Load(self.Options)
+    if not credentials then
+      self:_Lost(reason)
+      return
+    end
+  end
+  local ok = pcall(function()
+    self.Socket = self.NewSocket(self.Options.Tls)
+    self.Socket.ReconnectTimeout = 0
+    self.Socket.ReadTimeout = 0
+    self.Socket.WriteTimeout = 0
+    if self.Options.Tls then
+      -- Follow the official example order. Credential setters can affect native TLS
+      -- state; enable validation last (Designer 10.5 wrong-CA regression).
+      if credentials.ClientCertificate then
+        self.Socket.ClientCertData = credentials.ClientCertificate
+        self.Socket.ClientKeyData = credentials.ClientKey
+      end
+      self.Socket.CACertData = credentials.CaCertificate
+      self.Socket.ValidateCertificate = true
+    end
+    self.Socket.Connected = function()
+      if epoch ~= self.Epoch or self.State ~= "Connecting" then
+        return
+      end
+      self.State = "AwaitingConnack"
+      self.Deadline = self.Now() + self.Options.Timeout
+      local sent, reason = self:_Send({
+        type = Packet.CONNECT,
+        id = self.Options.ClientId,
+        clean = true,
+        keep_alive = self.Options.KeepAlive,
+        username = self.Options.Username,
+        password = self.Options.Password,
+        will = self.Options.Will,
+        properties = self.IsV5 and {
+          session_expiry_interval = 0,
+          maximum_packet_size = self.Options.MaxPacketBytes,
+          topic_alias_maximum = 0,
+        } or nil,
+      })
+      if epoch ~= self.Epoch then
+        return
+      end
+      if not sent then
+        self:_Lost(reason)
+      end
+    end
+    self.Socket.Data = function()
+      if epoch == self.Epoch then
+        self:_Pump()
+      end
+    end
+    self.Socket.Closed = function()
+      if epoch == self.Epoch then
+        self:_Lost("socket-closed")
+      end
+    end
+    self.Socket.Error = function()
+      if epoch == self.Epoch then
+        self:_Lost("socket-error")
+      end
+    end
+    self.Socket.Timeout = function()
+      if epoch == self.Epoch then
+        self:_Lost("socket-timeout")
+      end
+    end
+    self.Socket:Connect(self.Options.Host, self.Options.Port)
+  end)
+  if epoch ~= self.Epoch then
+    return
+  end
+  if not ok then
+    self:_Lost("transport-setup-failed")
+  elseif self.State == "Connecting" then
+    self:_State("Connecting", "opening-transport")
+  end
+end
+
+function Client:Connect()
+  if self.Disposed or self.Closing then
+    return nil, "client-unavailable"
+  end
+  if self.State ~= "Disconnected" then
+    return nil, "already-started"
+  end
+  self.Wanted = true
+  self.TickTimer:Start(0.25)
+  self:_Open()
+  return true
+end
+
+function Client:Disconnect()
+  self.Wanted = false
+  self.TickTimer:Stop()
+  if self.Closing then
+    return
+  end
+  self.Closing = true
+  if self.State == "Connected" then
+    self:_Send({ type = Packet.DISCONNECT })
+  end
+  self:_Release()
+  self.State = "Disconnected"
+  self:_FailPending("unconfirmed: disconnected")
+  self.Closing = false
+  self:_State("Disconnected", "requested")
+end
+
+function Client:Dispose()
+  self.Disposed = true
+  self.Wanted = false
+  self:Disconnect()
+  self.TickTimer:Stop()
+  self.TickTimer.EventHandler = IgnoreEvent
+  self.WorkTimer:Stop()
+  self.WorkTimer.EventHandler = IgnoreEvent
+end
+
+--*** Bounded operations and subscription intent ***
+function Client:_Request(args, callback, filter, qos)
+  if self.State ~= "Connected" or self.Closing then
+    return nil, "not-connected"
+  end
+  if callback ~= nil and type(callback) ~= "function" then
+    return nil, "invalid-callback"
+  end
+  if args.type == Packet.PUBLISH and self.IsV5 then
+    local publishes = 0
+    for _, operation in pairs(self.Pending) do
+      if operation.Kind == Packet.PUBLISH then
+        publishes = publishes + 1
+      end
+    end
+    if publishes >= self.ServerReceiveMaximum then
+      return nil, "broker-receive-limit"
+    end
+  end
+  if
+    args.type == Packet.SUBSCRIBE
+    and self.IsV5
+    and not self.ServerWildcardAvailable
+    and filter:find("[+#]")
+  then
+    return nil, "broker-wildcards-unavailable"
+  end
+  if self.PendingCount >= self.Options.MaxInflight then
+    return nil, "inflight-limit"
+  end
+  repeat
+    self.NextId = self.NextId % 65535 + 1
+  until not self.Pending[self.NextId]
+  args.packet_id = self.NextId
+  local operation = {
+    Kind = args.type,
+    Callback = callback,
+    Filter = filter,
+    Qos = qos,
+    Deadline = self.Now() + self.Options.Timeout,
+  }
+  self.Pending[args.packet_id] = operation
+  self.PendingCount = self.PendingCount + 1
+  local sent, reason = self:_Send(args)
+  if not sent then
+    if self.Pending[args.packet_id] == operation then
+      self.Pending[args.packet_id] = nil
+      self.PendingCount = self.PendingCount - 1
+    end
+    return nil, reason
+  end
+  return true, args.packet_id
+end
+
+function Client:Publish(topic, payload, qos, retain, callback)
+  qos = qos or 0
+  if
+    not Topic(topic, false)
+    or type(payload) ~= "string"
+    or not Integer(qos, 0, 1)
+    or (retain ~= nil and type(retain) ~= "boolean")
+    or (callback ~= nil and type(callback) ~= "function")
+  then
+    return nil, "invalid-publish"
+  end
+  if self.State ~= "Connected" or self.Closing then
+    return nil, "not-connected"
+  end
+  if self.IsV5 and qos > self.ServerMaximumQos then
+    return nil, "broker-qos-unavailable"
+  end
+  if self.IsV5 and retain and not self.ServerRetainAvailable then
+    return nil, "broker-retain-unavailable"
+  end
+  if #payload + #topic + 9 > self.Options.MaxPacketBytes then
+    return nil, "packet-too-large"
+  end
+  local args =
+    { type = Packet.PUBLISH, topic = topic, payload = payload, qos = qos, retain = retain or false }
+  if qos == 1 then
+    return self:_Request(args, callback)
+  end
+  local ok, reason = self:_Send(args)
+  if ok then
+    Call(self, callback, true, "written-unacknowledged")
+  end
+  return ok, reason
+end
+
+function Client:Subscribe(filter, qos, callback)
+  qos = qos or 0
+  if not Topic(filter, true) or not Integer(qos, 0, 1) then
+    return nil, "invalid-subscription"
+  end
+  if self.IsV5 and filter:sub(1, 7) == "$share/" then
+    return nil, "shared-subscriptions-unsupported"
+  end
+  for _, operation in pairs(self.Pending) do
+    if operation.Filter == filter then
+      return nil, "subscription-pending"
+    end
+  end
+  local count = 0
+  for _ in pairs(self.Subscriptions) do
+    count = count + 1
+  end
+  if not self.Subscriptions[filter] and count >= 32 then
+    return nil, "subscription-limit"
+  end
+  local ok, result = self:_Request({
+    type = Packet.SUBSCRIBE,
+    subscriptions = { { topic = filter, qos = qos } },
+  }, callback, filter, qos)
+  if ok then
+    self.Subscriptions[filter] = qos
+  end
+  return ok, result
+end
+
+function Client:Unsubscribe(filter, callback)
+  if not Topic(filter, true) then
+    return nil, "invalid-subscription"
+  end
+  if self.IsV5 and filter:sub(1, 7) == "$share/" then
+    return nil, "shared-subscriptions-unsupported"
+  end
+  for _, operation in pairs(self.Pending) do
+    if operation.Filter == filter then
+      return nil, "subscription-pending"
+    end
+  end
+  local ok, result = self:_Request({
+    type = Packet.UNSUBSCRIBE,
+    subscriptions = { filter },
+  }, callback, filter)
+  if ok then
+    self.Subscriptions[filter] = nil
+  end
+  return ok, result
+end
+
+function Client:_Ack(packet)
+  local operation = self.Pending[packet.packet_id]
+  local expected = {
+    [Packet.PUBACK] = Packet.PUBLISH,
+    [Packet.SUBACK] = Packet.SUBSCRIBE,
+    [Packet.UNSUBACK] = Packet.UNSUBSCRIBE,
+  }
+  if not operation then
+    return
+  end -- Duplicate/late acknowledgements carry no new result.
+  if operation.Kind ~= expected[packet.type] then
+    error("ack-kind")
+  end
+  local success, detail = true, "broker-acknowledged"
+  if packet.type == Packet.SUBACK then
+    if #packet.rc ~= 1 or (packet.rc[1] < 128 and packet.rc[1] > operation.Qos) then
+      error("invalid-suback")
+    end
+    success = packet.rc[1] < 128
+    detail = success and packet.rc[1]
+      or (self.IsV5 and ("subscription-refused-" .. packet.rc[1]) or "subscription-refused")
+    if not success then
+      self.Subscriptions[operation.Filter] = nil
+    end
+  end
+  if self.IsV5 and packet.type ~= Packet.SUBACK then
+    local code = packet.type == Packet.UNSUBACK and packet.rc[1] or packet.rc
+    success = code < 128
+    if not success then
+      detail = "broker-rejected-" .. code
+    elseif code == 16 then
+      detail = "broker-acknowledged-no-subscribers"
+    elseif code == 17 then
+      detail = "no-subscription-existed"
+    end
+  end
+  self.Pending[packet.packet_id] = nil
+  self.PendingCount = self.PendingCount - 1
+  local epoch = self.Epoch
+  Call(self, operation.Callback, success, detail)
+  if epoch == self.Epoch and packet.type == Packet.SUBACK then
+    Call(self, self.OnSubscription, operation.Filter, success, detail)
+  end
+end
+
+--*** Framing and protocol validation ***
+function Client:_Packet(frame)
+  local position = 1
+  local bodyStart = 2
+  repeat
+    bodyStart = bodyStart + 1
+  until frame:byte(bodyStart - 1) < 128
+  if self.IsV5 then
+    Mqtt5.ValidateFrame(frame, bodyStart, Utf8)
+  end
+  local packet, reason = self.Protocol.parse_packet(function(count)
+    if position + count - 1 > #frame then
+      return nil, "short-frame"
+    end
+    local data = frame:sub(position, position + count - 1)
+    position = position + count
+    return data
+  end)
+  if not packet then
+    error(reason)
+  end
+  local kind = packet.type
+  if kind ~= Packet.PUBLISH and frame:byte(1) % 16 ~= 0 then
+    error("reserved-flags")
+  end
+  if kind == Packet.CONNACK and frame:byte(bodyStart) ~= 0 then
+    error("connack-flags")
+  end
+  if
+    kind ~= Packet.CONNACK
+    and kind ~= Packet.PUBLISH
+    and kind ~= Packet.PUBACK
+    and kind ~= Packet.SUBACK
+    and kind ~= Packet.UNSUBACK
+    and kind ~= Packet.PINGRESP
+    and not (self.IsV5 and kind == Packet.DISCONNECT)
+  then
+    error("unexpected-packet")
+  end
+  if packet.packet_id and not Integer(packet.packet_id, 1, 65535) then
+    error("packet-id")
+  end
+  if kind == Packet.PUBLISH then
+    if
+      not Integer(packet.qos, 0, 1)
+      or (packet.qos == 0 and packet.dup)
+      or not Topic(packet.topic, false)
+    then
+      error("publish-header")
+    end
+  end
+  if self.IsV5 then
+    Mqtt5.ValidatePacket(packet, Topic)
+  elseif kind == Packet.SUBACK then
+    if #packet.rc ~= 1 or (packet.rc[1] ~= 0 and packet.rc[1] ~= 1 and packet.rc[1] ~= 128) then
+      error("suback-code")
+    end
+  end
+  local epoch = self.Epoch
+  self:_Trace("Rx", kind, #frame)
+  if epoch ~= self.Epoch or self.Disposed then
+    return
+  end
+  if self.State == "AwaitingConnack" then
+    if kind ~= Packet.CONNACK or packet.sp or (not self.IsV5 and not Integer(packet.rc, 0, 5)) then
+      error("connack")
+    end
+    if packet.rc ~= 0 then
+      self:_Lost("broker-refused-" .. packet.rc)
+      return
+    end
+    if self.IsV5 then
+      local props = packet.properties
+      self.ServerProperties = props
+      self.ServerPacketLimit = props.maximum_packet_size or self.Options.MaxPacketBytes
+      self.ServerReceiveMaximum = props.receive_maximum or 65535
+      self.ServerMaximumQos = props.maximum_qos or 2
+      self.ServerRetainAvailable = props.retain_available ~= 0
+      self.ServerWildcardAvailable = props.wildcard_subscription_available ~= 0
+      self.EffectiveKeepAlive = props.server_keep_alive or self.Options.KeepAlive
+      if props.session_expiry_interval and props.session_expiry_interval > 0 then
+        self:_Send({ type = Packet.DISCONNECT, properties = { session_expiry_interval = 0 } })
+        if epoch == self.Epoch then
+          self:_Lost("unsupported-session-expiry")
+        end
+        return
+      end
+    end
+    self.State = "Connected"
+    self.RetryDelay = 1
+    local epoch = self.Epoch
+    for filter, qos in pairs(self.Subscriptions) do
+      local ok, reason = self:_Request(
+        { type = Packet.SUBSCRIBE, subscriptions = { { topic = filter, qos = qos } } },
+        nil,
+        filter,
+        qos
+      )
+      if epoch ~= self.Epoch then
+        return
+      end
+      if not ok then
+        if reason == "broker-wildcards-unavailable" or reason == "packet-too-large" then
+          self.Subscriptions[filter] = nil
+          Call(self, self.OnSubscription, filter, false, reason)
+          if epoch ~= self.Epoch then
+            return
+          end
+        else
+          self:_Lost("resubscribe-failed")
+          return
+        end
+      end
+    end
+    if epoch == self.Epoch then
+      self:_State("Connected", "broker-accepted")
+    end
+  elseif self.State ~= "Connected" or kind == Packet.CONNACK then
+    error("unexpected-state")
+  elseif self.IsV5 and kind == Packet.DISCONNECT then
+    self:_Lost("broker-disconnected-" .. packet.rc)
+  elseif kind == Packet.PUBLISH then
+    if packet.qos == 1 then
+      local ok = self:_Send({ type = Packet.PUBACK, packet_id = packet.packet_id })
+      if not ok then
+        if epoch == self.Epoch then
+          self:_Lost("acknowledgement-send-failed")
+        end
+        return
+      end
+    end
+    Call(self, self.OnMessage, {
+      Topic = packet.topic,
+      Payload = packet.payload or "",
+      Qos = packet.qos,
+      Retain = packet.retain,
+      Duplicate = packet.dup,
+      Properties = packet.properties,
+      UserProperties = packet.user_properties,
+    })
+  elseif kind == Packet.PINGRESP then
+    self.PingAt = nil
+  else
+    self:_Ack(packet)
+  end
+end
+
+function Client:_PumpBody(epoch)
+  local available = self.Socket.BufferLength
+  if #self.Buffer + available > self.Options.MaxPacketBytes * 2 then
+    error("receive-limit")
+  end
+  if available > 0 then
+    local data = self.Socket:Read(math.min(available, 8192))
+    if data and #data > 0 then
+      self.Buffer = self.Buffer .. data
+      self.FrameSince = self.FrameSince or self.Now()
+    end
+  end
+  local processed = 0
+  while #self.Buffer >= 2 and processed < 16 do
+    local length, multiplier, index = 0, 1, 2
+    while true do
+      local byte = self.Buffer:byte(index)
+      if not byte then
+        return
+      end
+      length = length + (byte % 128) * multiplier
+      if length + index > self.Options.MaxPacketBytes then
+        error("packet-too-large")
+      end
+      if byte < 128 then
+        if index > 2 and byte == 0 then
+          error("noncanonical-length")
+        end
+        break
+      end
+      if index == 5 then
+        error("malformed-length")
+      end
+      multiplier = multiplier * 128
+      index = index + 1
+    end
+    if #self.Buffer < length + index then
+      break
+    end
+    local frame = self.Buffer:sub(1, length + index)
+    self.Buffer = self.Buffer:sub(length + index + 1)
+    self.FrameSince = #self.Buffer > 0 and self.Now() or nil
+    self:_Packet(frame)
+    if epoch ~= self.Epoch then
+      return
+    end
+    processed = processed + 1
+  end
+  if self.Socket.BufferLength > 0 or (processed == 16 and #self.Buffer > 0) then
+    self.WorkTimer:Start(0.01)
+  end
+end
+
+function Client:_Pump()
+  if self.Pumping or not self.Socket then
+    return
+  end
+  self.Pumping = true
+  local epoch = self.Epoch
+  local ok, failure = pcall(function()
+    self:_PumpBody(epoch)
+  end)
+  self.Pumping = false
+  if not ok and epoch == self.Epoch then
+    if self.IsV5 and self.State == "Connected" then
+      local code = tostring(failure):find("packet-too-large", 1, true) and 149 or 130
+      self:_Send({ type = Packet.DISCONNECT, rc = code })
+    end
+    if epoch == self.Epoch then
+      self:_Lost("invalid-or-excessive-input")
+    end
+  end
+  if ok and epoch == self.Epoch and self.Socket and self.Socket.BufferLength > 0 then
+    self.WorkTimer:Start(0.01)
+  end
+end
+
+function Client:_Tick()
+  local now = self.Now()
+  if self.State == "Reconnecting" and self.Wanted and now >= self.RetryAt then
+    self:_Open()
+  elseif
+    (self.State == "Connecting" or self.State == "AwaitingConnack") and now >= self.Deadline
+  then
+    self:_Lost("connection-timeout")
+  elseif self.State == "Connected" then
+    if self.FrameSince and now - self.FrameSince >= self.Options.Timeout then
+      self:_Lost("incomplete-packet-timeout")
+      return
+    end
+    for _, operation in pairs(self.Pending) do
+      if now >= operation.Deadline then
+        self:_Lost("acknowledgement-timeout")
+        return
+      end
+    end
+    if self.PingAt and now - self.PingAt >= self.Options.Timeout then
+      self:_Lost("ping-timeout")
+    elseif
+      self.EffectiveKeepAlive > 0
+      and not self.PingAt
+      and now - self.LastWrite >= self.EffectiveKeepAlive * 0.75
+    then
+      self.PingAt = now
+      self:_Send({ type = Packet.PINGREQ })
+    end
+  end
+end
+
+--*** Public construction ***
+function Mqtt.New(options, host)
+  if type(options) ~= "table" then
+    return nil, "options-required"
+  end
+  local config = {}
+  for key, value in pairs(options) do
+    config[key] = value
+  end
+  config.ProtocolVersion = config.ProtocolVersion or "3.1.1"
+  if config.ProtocolVersion ~= "3.1.1" and config.ProtocolVersion ~= "5.0" then
+    return nil, "unsupported-protocol-version"
+  end
+  config.Port = config.Port or (config.Tls and 8883 or 1883)
+  config.KeepAlive = config.KeepAlive == nil and 30 or config.KeepAlive
+  config.Timeout = config.Timeout or 10
+  config.MaxPacketBytes = config.MaxPacketBytes or 65536
+  config.MaxInflight = config.MaxInflight or 64
+  if
+    type(config.Host) ~= "string"
+    or #config.Host == 0
+    or #config.Host > 253
+    or config.Host:find("[%z%s]")
+    or not Integer(config.Port, 1, 65535)
+    or not Utf8(config.ClientId, false)
+    or not Integer(config.KeepAlive, 0, 65535)
+    or not Integer(config.Timeout, 1, 120)
+    or not Integer(config.MaxPacketBytes, 128, 1048576)
+    or not Integer(config.MaxInflight, 32, 256)
+    or (config.Tls ~= nil and type(config.Tls) ~= "boolean")
+  then
+    return nil, "invalid-options"
+  end
+  if config.Username ~= nil and not Utf8(config.Username, true) then
+    return nil, "invalid-username"
+  end
+  if
+    config.Password ~= nil
+    and (type(config.Password) ~= "string" or #config.Password > 65535 or config.Username == nil)
+  then
+    return nil, "invalid-password"
+  end
+  local validTls, tlsReason = Tls.Validate(config)
+  if not validTls then
+    return nil, tlsReason
+  end
+  if config.Will ~= nil then
+    local will = config.Will
+    if
+      type(will) ~= "table"
+      or not Topic(will.Topic, false)
+      or type(will.Payload) ~= "string"
+      or #will.Payload > 65535
+      or not Integer(will.Qos or 0, 0, 1)
+      or (will.Retain ~= nil and type(will.Retain) ~= "boolean")
+    then
+      return nil, "invalid-will"
+    end
+    config.Will = {
+      topic = will.Topic,
+      payload = will.Payload,
+      qos = will.Qos or 0,
+      retain = will.Retain or false,
+    }
+  end
+  host = host
+    or {
+      Now = function()
+        return Timer.Now()
+      end,
+      NewTimer = function()
+        return Timer.New()
+      end,
+      NewSocket = function(tls)
+        if tls then
+          return TcpSocket.NewTls()
+        end
+        return TcpSocket.New()
+      end,
+    }
+  local self = setmetatable({
+    Options = config,
+    Protocol = config.ProtocolVersion == "5.0" and Protocol5 or Protocol4,
+    IsV5 = config.ProtocolVersion == "5.0",
+    ServerPacketLimit = config.MaxPacketBytes,
+    Now = host.Now,
+    NewSocket = host.NewSocket,
+    State = "Disconnected",
+    Wanted = false,
+    Epoch = 0,
+    Buffer = "",
+    NextId = 0,
+    Pending = {},
+    PendingCount = 0,
+    Subscriptions = {},
+    RetryDelay = 1,
+  }, Client)
+  self.TickTimer = host.NewTimer()
+  self.WorkTimer = host.NewTimer()
+  self.TickTimer.EventHandler = function()
+    self:_Tick()
+  end
+  self.WorkTimer.EventHandler = function()
+    self.WorkTimer:Stop()
+    self:_Pump()
+  end
+  return self
+end
+
+return Mqtt
+
+end
+return Require("qsys_mqtt")
+end)()
+
+  --*** Control aliases and persistent objects ***
+  SavedPassword = SecretStorage["text.1"]
+  MqttClient = nil
+  ActiveFilters = {}
+  StartupTimer = Timer.New()
+  DebugTx = false
+  DebugRx = false
+  DebugFunctions = false
+
+  --*** Functions ***
+  function SetupDebug()
+    local mode = Properties["Debug Print"].Value
+    DebugTx = mode == "Tx" or mode == "Tx/Rx" or mode == "All"
+    DebugRx = mode == "Rx" or mode == "Tx/Rx" or mode == "All"
+    DebugFunctions = mode == "Function Calls" or mode == "All"
+  end
+
+  function SetStatus(value, text)
+    Controls.Status.Value = value
+    Controls.Status.String = text
+  end
+
+  function ClearReceived()
+    for channel = 1, Properties.Channels.Value do
+      Controls["Subscribed" .. channel].Boolean = false
+      Controls["ReceivedValid" .. channel].Boolean = false
+      Controls["ReceivedTopic" .. channel].String = ""
+      Controls["ReceivedPayload" .. channel].String = ""
+      Controls["ReceivedFormat" .. channel].String = ""
+      Controls["SubscriptionResult" .. channel].String = "Not subscribed"
+    end
+  end
+
+  function StopClient()
+    StartupTimer:Stop()
+    if MqttClient then
+      MqttClient:Dispose()
+    end
+    MqttClient = nil
+    Controls.Connected.Boolean = false
+    ClearReceived()
+  end
+
+  function DisplayPayload(payload)
+    local clipped = #payload > 2048
+    payload = payload:sub(1, 2048)
+    local format = "Text"
+    if payload:find("[^ -~\r\n\t]") then
+      format = "Hex"
+      payload = payload:gsub(".", function(byte)
+        return string.format("%02X", byte:byte())
+      end)
+    end
+    if clipped then
+      format = format .. " (truncated)"
+    end
+    return payload, format
+  end
+
+  function StartClient()
+    if DebugFunctions then
+      print("MQTT: StartClient")
+    end
+    StopClient()
+    if not Controls.Enable.Boolean then
+      SetStatus(3, "Disabled")
+      return
+    end
+    local options = {
+      ProtocolVersion = Properties["MQTT Version"] and Properties["MQTT Version"].Value or "3.1.1",
+      Host = Controls.IPAddress.String,
+      Port = Controls.Port.Value,
+      ClientId = Controls.ClientId.String,
+      Tls = Controls.Tls.Boolean,
+      CaCertificate = Controls.CaCertificate.String,
+      KeepAlive = Controls.KeepAlive.Value,
+    }
+    if Controls.CaFromFile.Boolean then
+      options.CaCertificate = nil
+      options.CaCertificateFile = Controls.CaCertificateFile.String
+    end
+    if Controls.MutualTls.Boolean then
+      options.ClientCertificateFile = Controls.ClientCertificateFile.String
+      options.ClientKeyFile = Controls.ClientKeyFile.String
+    end
+    if Controls.Username.String ~= "" then
+      options.Username = Controls.Username.String
+      options.Password = SavedPassword.String
+    elseif SavedPassword.String ~= "" then
+      SetStatus(2, "Password requires username")
+      return
+    end
+    if Controls.WillTopic.String ~= "" then
+      options.Will = {
+        Topic = Controls.WillTopic.String,
+        Payload = Controls.WillPayload.String,
+        Qos = tonumber(Controls.WillQos.String),
+        Retain = Controls.WillRetain.Boolean,
+      }
+      if options.Will.Qos == nil then
+        SetStatus(2, "Invalid Will QoS")
+        return
+      end
+    end
+    local reason
+    MqttClient, reason = Mqtt.New(options)
+    if not MqttClient then
+      SetStatus(2, reason)
+      return
+    end
+    ActiveFilters = {}
+    for channel = 1, Properties.Channels.Value do
+      ActiveFilters[channel] = {
+        Filter = Controls["SubscribeFilter" .. channel].String,
+        Qos = tonumber(Controls["SubscribeQos" .. channel].String),
+      }
+      if ActiveFilters[channel].Qos ~= 0 and ActiveFilters[channel].Qos ~= 1 then
+        StopClient()
+        SetStatus(2, "Invalid subscription QoS")
+        return
+      end
+    end
+    MqttClient.OnTrace = function(_, direction, packetType, bytes)
+      if (direction == "Tx" and DebugTx) or (direction == "Rx" and DebugRx) then
+        print("MQTT " .. direction .. " " .. packetType .. " (" .. bytes .. " bytes)")
+      end
+    end
+    MqttClient.OnError = function(_, errorCode)
+      print("MQTT: " .. errorCode)
+      SetStatus(2, errorCode)
+    end
+    MqttClient.OnSubscription = function(_, filter, ok, detail)
+      for channel, active in ipairs(ActiveFilters) do
+        if active.Filter == filter then
+          Controls["Subscribed" .. channel].Boolean = ok
+          Controls["SubscriptionResult" .. channel].String = ok
+              and "Subscribed (QoS " .. detail .. ")"
+            or detail
+        end
+      end
+    end
+    MqttClient.OnState = function(client, state, detail)
+      print("MQTT: " .. state .. " (" .. detail .. ")")
+      Controls.Connected.Boolean = state == "Connected"
+      local statusValue = 2
+      if state == "Connected" then
+        statusValue = 0
+      elseif state == "Connecting" then
+        statusValue = 5
+      elseif state == "Disconnected" and detail == "requested" then
+        -- Deliberately inactive, rather than a failed enabled connection.
+        statusValue = 3
+      end
+      SetStatus(statusValue, state .. ": " .. detail)
+      if state ~= "Connected" then
+        ClearReceived()
+      elseif not client.PluginConfigured then
+        client.PluginConfigured = true
+        local filters = {}
+        for _, active in ipairs(ActiveFilters) do
+          if active.Filter ~= "" then
+            filters[active.Filter] = math.max(filters[active.Filter] or 0, active.Qos)
+          end
+        end
+        for filter, qos in pairs(filters) do
+          local ok, errorCode = client:Subscribe(filter, qos)
+          if not ok then
+            client.OnSubscription(client, filter, false, errorCode)
+          end
+        end
+      end
+    end
+    MqttClient.OnMessage = function(_, message)
+      for channel, active in ipairs(ActiveFilters) do
+        if Mqtt.TopicMatches(active.Filter, message.Topic) then
+          local payload, format = DisplayPayload(message.Payload)
+          Controls["ReceivedTopic" .. channel].String = message.Topic
+          Controls["ReceivedPayload" .. channel].String = payload
+          Controls["ReceivedFormat" .. channel].String = format
+          Controls["ReceivedValid" .. channel].Boolean = true
+          Controls["MessageCount" .. channel].Value = (
+            Controls["MessageCount" .. channel].Value + 1
+          ) % 1000000000
+          Controls["MessageReceived" .. channel]:Trigger()
+        end
+      end
+    end
+    MqttClient:Connect()
+  end
+
+  function PublishChannel(channel)
+    if DebugFunctions then
+      print("MQTT: PublishChannel " .. channel)
+    end
+    local result = Controls["PublishResult" .. channel]
+    local payload = Controls["PublishPayload" .. channel].String
+    local qos = tonumber(Controls["PublishQos" .. channel].String)
+    if not MqttClient then
+      result.String = "Not connected"
+      return
+    end
+    if #payload > 2048 then
+      result.String = "Payload limit: 2048 bytes"
+      return
+    end
+    if qos == nil then
+      result.String = "Invalid QoS"
+      return
+    end
+    result.String = "Awaiting result"
+    local ok, reason = MqttClient:Publish(
+      Controls["PublishTopic" .. channel].String,
+      payload,
+      qos,
+      Controls["PublishRetain" .. channel].Boolean,
+      function(_, success, detail)
+        result.String = success
+            and detail == "broker-acknowledged-no-subscribers"
+            and "ACK: no subscribers"
+          or ((success and "OK: " or "Failed: ") .. detail)
+      end
+    )
+    if not ok then
+      result.String = reason
+    end
+  end
+
+  --*** Event handlers ***
+  Controls.Password.EventHandler = function(control)
+    SavedPassword.String = control.String
+    control.String = control.String ~= "" and "********" or ""
+  end
+  Controls.Enable.EventHandler = StartClient
+  Controls.Reconnect.EventHandler = StartClient
+  for channel = 1, Properties.Channels.Value do
+    Controls["Publish" .. channel].EventHandler = function()
+      PublishChannel(channel)
+    end
+  end
+  StartupTimer.EventHandler = function()
+    StartupTimer:Stop()
+    StartClient()
+  end
+
+  --*** Initialization ***
+  SetupDebug()
+  print("MQTT Client " .. PluginInfo.Version)
+  Controls.Password.String = SavedPassword.String ~= "" and "********" or ""
+  Controls.WillQos.Choices = { "0", "1" }
+  for channel = 1, Properties.Channels.Value do
+    Controls["PublishQos" .. channel].Choices = { "0", "1" }
+    Controls["SubscribeQos" .. channel].Choices = { "0", "1" }
+    Controls["PublishResult" .. channel].String = "No publish requested"
+    Controls["MessageCount" .. channel].Value = 0
+  end
+  ClearReceived()
+  Controls.Connected.Boolean = false
+  SetStatus(3, "Disabled")
+  if Controls.Enable.Boolean then
+    StartupTimer:Start(1)
+  end
+end

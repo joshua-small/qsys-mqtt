@@ -1,0 +1,43 @@
+name: Deploy Library feed
+on:
+  workflow_run:
+    workflows: [Publish package and Library feed]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages-feed
+  cancel-in-progress: false
+jobs:
+  feed:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/configure-pages@v5
+        id: pages
+      - run: dotnet tool install sleet --tool-path "$RUNNER_TEMP/sleet" --version 7.2.0
+      - name: Generate feed from releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          BASE_URL: ${{ steps.pages.outputs.base_url }}
+        run: python3 scripts/feed.py --repository "$REPOSITORY" --base-url "$BASE_URL" --sleet "$RUNNER_TEMP/sleet/sleet"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: feed
+      - uses: actions/deploy-pages@v4
+        id: deployment

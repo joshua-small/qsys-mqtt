@@ -1,0 +1,38 @@
+name: Publish package and Library feed
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+concurrency:
+  group: library-feed
+  cancel-in-progress: false
+jobs:
+  package:
+    if: github.event_name == 'release' && !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Pack
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]
+          python3 scripts/verify.py
+          dotnet pack MqttClient.csproj -o dist -p:PackageVersion="$VERSION"
+          cp content/MqttClient.qplug dist/MqttClient.qplug
+          cd dist
+          sha256sum *.nupkg *.qplug > SHA256SUMS
+      - name: Attach release files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" dist/*.nupkg dist/*.qplug dist/SHA256SUMS
