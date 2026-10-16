@@ -1,0 +1,102 @@
+{
+  "scope": "Exact module 0.3.1 engine in separate diagnostic fixture on experimental modified Core VM, not normal-plugin UI or physical Core acceptance",
+  "runtime_pids": [
+    22547,
+    22785
+  ],
+  "module_sha256": "afffc3d4e8ed0403e5ae3701f21859ea13c44b03c4771a0fb8c6550308f4eab0",
+  "events": [
+    {
+      "kind": "ready"
+    },
+    {
+      "kind": "native",
+      "message": "BEGIN module 0.3.1 native file/restart guard"
+    },
+    {
+      "kind": "native",
+      "message": "STORE_READ /var/tmp/cert/trusted_combined.pem DENIED invalid path"
+    },
+    {
+      "kind": "native",
+      "message": "STORE_READ var/tmp/cert/trusted_combined.pem DENIED invalid path"
+    },
+    {
+      "kind": "native",
+      "message": "INITIAL Connecting opening-transport"
+    },
+    {
+      "kind": "handshake",
+      "protocol": "TLSv1.3",
+      "session_reused": false
+    },
+    {
+      "kind": "mqtt5-connect",
+      "bytes": 40
+    },
+    {
+      "kind": "native",
+      "message": "INITIAL Connected broker-accepted"
+    },
+    {
+      "kind": "native",
+      "message": "INITIAL Disconnected requested"
+    },
+    {
+      "kind": "native",
+      "message": "ROTATE Disconnected ca-change-requires-runtime-restart"
+    },
+    {
+      "kind": "native",
+      "message": "ROTATE Disconnected requested"
+    },
+    {
+      "kind": "native",
+      "message": "REVERT Disconnected ca-change-requires-runtime-restart"
+    },
+    {
+      "kind": "native",
+      "message": "REVERT Disconnected requested"
+    },
+    {
+      "kind": "native",
+      "message": "PASS rotation and replacement blocked; wrong CA retained for next Save to Core & Run"
+    },
+    {
+      "kind": "native",
+      "message": "DONE"
+    },
+    {
+      "kind": "native",
+      "message": "BEGIN module 0.3.1 native file/restart guard"
+    },
+    {
+      "kind": "native",
+      "message": "STORE_READ /var/tmp/cert/trusted_combined.pem DENIED invalid path"
+    },
+    {
+      "kind": "native",
+      "message": "STORE_READ var/tmp/cert/trusted_combined.pem DENIED invalid path"
+    },
+    {
+      "kind": "native",
+      "message": "FRESH-WRONG Connecting opening-transport"
+    },
+    {
+      "kind": "native",
+      "message": "FRESH-WRONG Reconnecting socket-error"
+    },
+    {
+      "kind": "native",
+      "message": "FRESH-WRONG Disconnected requested"
+    },
+    {
+      "kind": "native",
+      "message": "PASS wrong CA rejected after Save to Core & Run"
+    },
+    {
+      "kind": "native",
+      "message": "DONE"
+    }
+  ]
+}

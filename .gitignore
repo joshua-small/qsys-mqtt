@@ -4,3 +4,4 @@ dist/
 feed/
 sleet.json
 __pycache__/
+.local/

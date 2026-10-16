@@ -1,0 +1,134 @@
+{"kind": "ready", "ports": [18990, 18991, 18992, 18993, 18994], "tickets": false}
+{"kind": "native", "message": "BEGIN native bare-TLS no server tickets"}
+{"kind": "native", "message": "wrong-fresh START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"kind": "native", "message": "wrong-fresh ERROR TLS error: error:1416F086:SSL routines:tls_process_server_certificate:certificate verify failed (Certificate validation failed: unable to get local issuer certificate)"}
+{"kind": "native", "message": "correct START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18991, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "correct TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "correct", "port": 18991}
+{"kind": "native", "message": "correct ACCEPTED"}
+{"kind": "native", "message": "wrong-after-correct START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18991, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "wrong-after-correct TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "wrong-after-correct", "port": 18991}
+{"kind": "native", "message": "wrong-after-correct ACCEPTED"}
+{"kind": "native", "message": "wrong-new-port START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18992, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "wrong-new-port TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "wrong-new-port", "port": 18992}
+{"kind": "native", "message": "wrong-new-port ACCEPTED"}
+{"kind": "native", "message": "correct-new-port START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18992, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "correct-new-port TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "correct-new-port", "port": 18992}
+{"kind": "native", "message": "correct-new-port ACCEPTED"}
+{"kind": "native", "message": "correct-again START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18991, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "correct-again TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "correct-again", "port": 18991}
+{"kind": "native", "message": "correct-again ACCEPTED"}
+{"kind": "native", "message": "wrong-after-empty START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18991, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "wrong-after-empty TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "wrong-after-empty", "port": 18991}
+{"kind": "native", "message": "wrong-after-empty ACCEPTED"}
+{"kind": "native", "message": "untrusted-client-fresh START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"kind": "native", "message": "untrusted-client-fresh TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "native", "message": "untrusted-client-fresh ERROR An existing connection was forcibly closed by the remote host."}
+{"kind": "native", "message": "trusted-client START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": [[["commonName", "qsys-mqtt-test-client"]]], "kind": "handshake", "port": 18994, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "payload", "label": "trusted-client", "port": 18994}
+{"kind": "native", "message": "trusted-client TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "native", "message": "trusted-client ACCEPTED"}
+{"kind": "native", "message": "untrusted-client-after-trusted START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"kind": "native", "message": "untrusted-client-after-trusted TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "native", "message": "untrusted-client-after-trusted ERROR An existing connection was forcibly closed by the remote host."}
+{"kind": "native", "message": "renewed-client START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": [[["commonName", "qsys-mqtt-renewed"]]], "kind": "handshake", "port": 18994, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "payload", "label": "renewed-client", "port": 18994}
+{"kind": "native", "message": "renewed-client TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "native", "message": "renewed-client ACCEPTED"}
+{"kind": "native", "message": "no-client-after-trusted START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"kind": "native", "message": "no-client-after-trusted TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "native", "message": "no-client-after-trusted ERROR The operation completed successfully."}
+{"kind": "native", "message": "DONE"}
+{"kind": "native", "message": "BEGIN native bare-TLS no server tickets"}
+{"kind": "native", "message": "wrong-fresh START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18991, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "wrong-fresh TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "wrong-fresh", "port": 18991}
+{"kind": "native", "message": "wrong-fresh ACCEPTED"}
+{"kind": "native", "message": "correct START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18991, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "correct TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "correct", "port": 18991}
+{"kind": "native", "message": "correct ACCEPTED"}
+{"kind": "native", "message": "wrong-after-correct START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18991, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "wrong-after-correct TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "wrong-after-correct", "port": 18991}
+{"kind": "native", "message": "wrong-after-correct ACCEPTED"}
+{"kind": "native", "message": "wrong-new-port START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18992, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "wrong-new-port TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "wrong-new-port", "port": 18992}
+{"kind": "native", "message": "wrong-new-port ACCEPTED"}
+{"kind": "native", "message": "correct-new-port START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18992, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "correct-new-port TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "correct-new-port", "port": 18992}
+{"kind": "native", "message": "correct-new-port ACCEPTED"}
+{"kind": "native", "message": "correct-again START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18991, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "correct-again TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "correct-again", "port": 18991}
+{"kind": "native", "message": "correct-again ACCEPTED"}
+{"kind": "native", "message": "wrong-after-empty START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": null, "kind": "handshake", "port": 18991, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "native", "message": "wrong-after-empty TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "payload", "label": "wrong-after-empty", "port": 18991}
+{"kind": "native", "message": "wrong-after-empty ACCEPTED"}
+{"kind": "native", "message": "untrusted-client-fresh START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"kind": "native", "message": "untrusted-client-fresh TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "native", "message": "untrusted-client-fresh ERROR An existing connection was forcibly closed by the remote host."}
+{"kind": "native", "message": "trusted-client START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": [[["commonName", "qsys-mqtt-test-client"]]], "kind": "handshake", "port": 18994, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "payload", "label": "trusted-client", "port": 18994}
+{"kind": "native", "message": "trusted-client TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "native", "message": "trusted-client ACCEPTED"}
+{"kind": "native", "message": "untrusted-client-after-trusted START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"kind": "native", "message": "untrusted-client-after-trusted TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "native", "message": "untrusted-client-after-trusted ERROR An existing connection was forcibly closed by the remote host."}
+{"kind": "native", "message": "renewed-client START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"client_subject": [[["commonName", "qsys-mqtt-renewed"]]], "kind": "handshake", "port": 18994, "protocol": "TLSv1.3", "session_reused": false}
+{"kind": "payload", "label": "renewed-client", "port": 18994}
+{"kind": "native", "message": "renewed-client TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "native", "message": "renewed-client ACCEPTED"}
+{"kind": "native", "message": "no-client-after-trusted START caReadback=true validate=true"}
+{"kind": "sni", "name": null}
+{"kind": "native", "message": "no-client-after-trusted TLS-CONNECTED-awaiting-server-ACK"}
+{"kind": "native", "message": "no-client-after-trusted ERROR The operation completed successfully."}
+{"kind": "native", "message": "DONE"}
