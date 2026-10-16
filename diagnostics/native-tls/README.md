@@ -1,6 +1,7 @@
 # Native TLS trust-replacement reproducer
 
-Status: **unresolved native Designer 10.5.0 behavior; not a plugin fix**.
+Status: **unresolved native TLS behavior in Designer 10.5.0 and an experimental
+Linux Core VM running 10.5.0-2609.007; not a plugin fix**.
 Tracked in [issue 1](https://github.com/joshua-small/qsys-mqtt/issues/1).
 This diagnostic uses `TcpSocket.NewTls()` directly. It contains no MQTT engine,
 reconnect manager, certificate-file adapter, or MQTT UI state.
@@ -39,7 +40,7 @@ case. Finish by stopping emulation and the Python server. Restart Designer befor
 repeating a fresh-process comparison. Do not copy these diagnostic files into the
 installed Plugins catalog or deploy them to a production Core.
 
-## Observed results, 2026-10-16
+## Designer emulation results, 2026-10-16
 
 [Recorded events](designer-10.5.0.jsonl) contain two complete runs: a fresh Designer
 process, then emulation restarted in that same process. The test server was not
@@ -64,6 +65,48 @@ did not clear the trust: the first wrong-CA case in the second run was accepted.
 The exact native internal mechanism and its scope across other scripts,
 plugin instances and physical Cores have not been established.
 
+## Linux Core VM results, 2026-10-16
+
+The same twelve-case sequence was deployed with **Save to Core & Run** to an
+existing experimental Hyper-V lab VM running firmware `10.5.0-2609.007`. These
+were native Linux `runtime_engine` runs, not Designer emulation. The VM has
+existing platform shims and a model alias; their hashes matched in the captures
+before and after redeployment. The running native executable matched the retained
+original firmware binary. This is evidence from a modified lab environment, not
+acceptance on a supported or physical Core.
+
+The probe's only runtime changes were its two destination addresses. The Python
+server bound directly to the host-only interface, and the synthetic server
+certificate included that interface's IP SAN. There was no TLS relay. Python TLS
+positive/negative controls against the same listener and certificates passed.
+Raw VM captures, design files and generated private keys remain local; this is a
+sanitized result summary.
+
+Two complete native runs produced the same results:
+
+| Case | Both VM runs |
+| --- | --- |
+| Unrelated CA first | Rejected: unable to get local issuer certificate |
+| Correct CA | Accepted with server acknowledgement |
+| Unrelated CA after correct CA, new socket | Accepted incorrectly |
+| Unrelated CA, different port and separate server TLS context | Accepted incorrectly |
+| Correct CA on the new port, then correct CA again | Accepted |
+| Empty `CACertData`, then unrelated CA | Accepted incorrectly |
+| Untrusted client certificate before/after trusted identity | Rejected before acknowledgement |
+| Trusted and renewed client identities | Accepted with distinct subjects recorded by server |
+| No client identity after trusted identity | Rejected before acknowledgement |
+
+Every case read back the assigned CA and used `ValidateCertificate=true`. All
+sixteen accepted connections across the two runs used TLS 1.3 and
+`session_reused=false`, and each required its matching server acknowledgement.
+This reproduces the trust-replacement failure outside Designer emulation.
+
+Between runs, **Save to Core & Run** changed the native runtime PID. The first
+unrelated-CA case rejected again in the new process, unlike stopping/restarting
+emulation within one Designer process. The within-process failure then recurred.
+Process replacement cleared the tested state; this is not a supported MQTT
+reconnect or CA-rotation fix. The exact native cause remains unresolved.
+
 ## Implementation and acceptance boundary
 
 The MQTT source already releases the old socket, reloads current credentials,
@@ -82,7 +125,11 @@ Those offline checks do not resolve the native failure.
 A per-client rotation guard would not establish native isolation from other
 scripts or plugin instances, and disabling certificate validation is not a fix.
 The package therefore retains its TLS warning and version 0.3.0.1. No production
-source, installed plugin, Core or certificate store was changed by this diagnosis.
+source, installed plugin or Core Manager certificate configuration was changed
+by this diagnosis.
+The lab VM temporarily ran a separate diagnostic design for the native test;
+its backed-up design was restored afterward. The test server was stopped and
+the temporary scoped firewall rule was removed.
 
 Next acceptance requires a supported Q-SYS trust replacement/isolation mechanism
 or runtime correction, followed by the issue's Designer/Core test matrix. File
