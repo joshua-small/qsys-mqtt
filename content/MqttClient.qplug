@@ -1,8 +1,8 @@
 -- MQTT client candidate for Q-SYS 10.5. See the adjacent README for acceptance limits.
 PluginInfo = {
   Name = "Utilities~MQTT Client",
-  Version = "0.3.0.1",
-  BuildVersion = "0.3.0.1",
+  Version = "0.3.1.0",
+  BuildVersion = "0.3.1.0",
   Id = "f622973c-31a1-4ab0-afd0-2fbb9a436eb3",
   Author = "QsysExplode project",
   Manufacturer = "Generic",
@@ -3934,9 +3934,12 @@ return protocol5
 
 end
 Loaders["qsys_mqtt.tls"] = function()
--- Explicit per-socket TLS credentials. Files are reread for every connection.
+-- Explicit TLS credentials. Native CA trust outlives individual sockets.
+-- Keep the first CA for this module lifetime; never clear it on client disposal.
 local Tls = {}
 local Limit = 131072
+local InitialCa
+local RestartRequired = false
 local Fields = { "CaCertificate", "ClientCertificate", "ClientKey" }
 
 local function FilePath(path)
@@ -4033,6 +4036,9 @@ local function Pem(data, key)
 end
 
 function Tls.Load(options)
+  if RestartRequired then
+    return nil, "ca-change-requires-runtime-restart"
+  end
   local result = {}
   for index, name in ipairs(Fields) do
     local data = options[name]
@@ -4049,6 +4055,13 @@ function Tls.Load(options)
     end
     result[name] = data
   end
+  -- Pin before any native credential setter can modify process-wide trust.
+  -- This is a local rotation guard, not isolation from other Lua environments.
+  if InitialCa and result.CaCertificate ~= InitialCa then
+    RestartRequired = true
+    return nil, "ca-change-requires-runtime-restart"
+  end
+  InitialCa = result.CaCertificate
   return result
 end
 
@@ -4267,7 +4280,7 @@ local Protocol5 = require("mqtt.protocol5")
 local Mqtt5 = require("qsys_mqtt.v5")
 local Tls = require("qsys_mqtt.tls")
 local Packet = require("mqtt.protocol").packet_type
-local Mqtt = { Version = "0.3.0" }
+local Mqtt = { Version = "0.3.1" }
 local Client = {}
 Client.__index = Client
 
@@ -4473,7 +4486,14 @@ function Client:_Open()
     local reason
     credentials, reason = Tls.Load(self.Options)
     if not credentials then
-      self:_Lost(reason)
+      if reason == "ca-change-requires-runtime-restart" then
+        self.Wanted = false
+        self.TickTimer:Stop()
+        self:_FailPending("unconfirmed: " .. reason)
+        self:_State("Disconnected", reason)
+      else
+        self:_Lost(reason)
+      end
       return
     end
   end
@@ -5301,7 +5321,11 @@ end)()
         -- Deliberately inactive, rather than a failed enabled connection.
         statusValue = 3
       end
-      SetStatus(statusValue, state .. ": " .. detail)
+      local statusText = state .. ": " .. detail
+      if detail == "ca-change-requires-runtime-restart" then
+        statusText = "CA changed: Save to Core & Run required"
+      end
+      SetStatus(statusValue, statusText)
       if state ~= "Connected" then
         ClearReceived()
       elseif not client.PluginConfigured then

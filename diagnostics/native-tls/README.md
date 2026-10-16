@@ -6,6 +6,21 @@ Tracked in [issue 1](https://github.com/joshua-small/qsys-mqtt/issues/1).
 This diagnostic uses `TcpSocket.NewTls()` directly. It contains no MQTT engine,
 reconnect manager, certificate-file adapter, or MQTT UI state.
 
+## October 16 follow-up: Core Manager and interim guard
+
+The original evidence below describes plugin 0.3.0.1 and its diagnostic baseline.
+The current 0.3.1.0 candidate adds a per-module CA-change guard and requires
+Save to Core & Run; it does not repair native trust isolation. See the current
+[report draft](../../NATIVE-TLS-REPORT.md) and [package guidance](../../README.md).
+
+[Managed-store evidence](managed-store-10.5.0.json) records three fresh-runtime
+comparisons with the central list empty, the public test CA trusted, and that CA
+declined. A validating Lua socket still required explicit `CACertData`, and an
+explicitly supplied correct CA succeeded even while declined centrally. The
+native empty-CA error was observed in Designer; the receiver log records its
+deadline. The public CA was removed after testing. No device private key or
+administrator credential is included.
+
 ## Reproduce locally
 
 Use a separate test design and disposable output directory. The generated Lua

@@ -1,0 +1,249 @@
+{
+  "scope": "Experimental modified Linux Core VM, 10.5.0-2609.007; not physical Core acceptance",
+  "date": "2026-10-16",
+  "settings": {
+    "access_control": true,
+    "secure_communication": true,
+    "trust_on_first_use": false,
+    "verify_validity_period": true
+  },
+  "runtime_sha256": "b3aa9ebcd86eb2cae82aed65740d50477dd64ddc85085d35b3c7662fa01bb114",
+  "managed_public_ca_sha256": "c4fbc0fa50a056ed7c0a83aed256cea307e3463e6939698a9d55700b6e1e270a",
+  "managed_bundle_bytes_when_trusted": 1164,
+  "native_no_ca_error_observed_in_designer": "Certificate validation enabled but no CA certificate provided",
+  "fresh_runtime_for_each_case_set": true,
+  "temporary_managed_ca_removed": true,
+  "case_sets": {
+    "manager-empty": [
+      {
+        "kind": "ready",
+        "ports": [
+          18990,
+          18991,
+          18992,
+          18993,
+          18994
+        ],
+        "tickets": false
+      },
+      {
+        "kind": "native",
+        "message": "BEGIN manager-store probe no server tickets"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-fresh START caReadback=false validate=true"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-fresh DEADLINE"
+      },
+      {
+        "kind": "native",
+        "message": "wrong-explicit-fresh START caReadback=true validate=true"
+      },
+      {
+        "kind": "sni",
+        "name": null
+      },
+      {
+        "kind": "native",
+        "message": "wrong-explicit-fresh ERROR TLS error: error:0A000086:SSL routines::certificate verify failed (Certificate validation failed: unable to get local issuer certificate)"
+      },
+      {
+        "kind": "native",
+        "message": "correct-explicit START caReadback=true validate=true"
+      },
+      {
+        "kind": "sni",
+        "name": null
+      },
+      {
+        "client_subject": null,
+        "kind": "handshake",
+        "port": 18991,
+        "protocol": "TLSv1.3",
+        "session_reused": false
+      },
+      {
+        "kind": "native",
+        "message": "correct-explicit TLS-CONNECTED-awaiting-server-ACK"
+      },
+      {
+        "kind": "payload",
+        "label": "correct-explicit",
+        "port": 18991
+      },
+      {
+        "kind": "native",
+        "message": "correct-explicit ACCEPTED"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-after-explicit START caReadback=false validate=true"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-after-explicit DEADLINE"
+      },
+      {
+        "kind": "native",
+        "message": "DONE"
+      }
+    ],
+    "manager-trusted": [
+      {
+        "kind": "ready",
+        "ports": [
+          18990,
+          18991,
+          18992,
+          18993,
+          18994
+        ],
+        "tickets": false
+      },
+      {
+        "kind": "native",
+        "message": "BEGIN manager-store probe no server tickets"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-fresh START caReadback=false validate=true"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-fresh DEADLINE"
+      },
+      {
+        "kind": "native",
+        "message": "wrong-explicit-fresh START caReadback=true validate=true"
+      },
+      {
+        "kind": "sni",
+        "name": null
+      },
+      {
+        "kind": "native",
+        "message": "wrong-explicit-fresh ERROR TLS error: error:0A000086:SSL routines::certificate verify failed (Certificate validation failed: unable to get local issuer certificate)"
+      },
+      {
+        "kind": "native",
+        "message": "correct-explicit START caReadback=true validate=true"
+      },
+      {
+        "kind": "sni",
+        "name": null
+      },
+      {
+        "client_subject": null,
+        "kind": "handshake",
+        "port": 18991,
+        "protocol": "TLSv1.3",
+        "session_reused": false
+      },
+      {
+        "kind": "native",
+        "message": "correct-explicit TLS-CONNECTED-awaiting-server-ACK"
+      },
+      {
+        "kind": "payload",
+        "label": "correct-explicit",
+        "port": 18991
+      },
+      {
+        "kind": "native",
+        "message": "correct-explicit ACCEPTED"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-after-explicit START caReadback=false validate=true"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-after-explicit DEADLINE"
+      },
+      {
+        "kind": "native",
+        "message": "DONE"
+      }
+    ],
+    "manager-declined": [
+      {
+        "kind": "ready",
+        "ports": [
+          18990,
+          18991,
+          18992,
+          18993,
+          18994
+        ],
+        "tickets": false
+      },
+      {
+        "kind": "native",
+        "message": "BEGIN manager-store probe no server tickets"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-fresh START caReadback=false validate=true"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-fresh DEADLINE"
+      },
+      {
+        "kind": "native",
+        "message": "wrong-explicit-fresh START caReadback=true validate=true"
+      },
+      {
+        "kind": "sni",
+        "name": null
+      },
+      {
+        "kind": "native",
+        "message": "wrong-explicit-fresh ERROR TLS error: error:0A000086:SSL routines::certificate verify failed (Certificate validation failed: unable to get local issuer certificate)"
+      },
+      {
+        "kind": "native",
+        "message": "correct-explicit START caReadback=true validate=true"
+      },
+      {
+        "kind": "sni",
+        "name": null
+      },
+      {
+        "client_subject": null,
+        "kind": "handshake",
+        "port": 18991,
+        "protocol": "TLSv1.3",
+        "session_reused": false
+      },
+      {
+        "kind": "native",
+        "message": "correct-explicit TLS-CONNECTED-awaiting-server-ACK"
+      },
+      {
+        "kind": "payload",
+        "label": "correct-explicit",
+        "port": 18991
+      },
+      {
+        "kind": "native",
+        "message": "correct-explicit ACCEPTED"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-after-explicit START caReadback=false validate=true"
+      },
+      {
+        "kind": "native",
+        "message": "manager-only-after-explicit DEADLINE"
+      },
+      {
+        "kind": "native",
+        "message": "DONE"
+      }
+    ]
+  }
+}
