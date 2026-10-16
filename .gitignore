@@ -1,0 +1,6 @@
+bin/
+obj/
+dist/
+feed/
+sleet.json
+__pycache__/

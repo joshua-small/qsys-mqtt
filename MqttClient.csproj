@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>JoshuaSmall.Qsys.MqttClient</PackageId>
+    <Version>0.3.0.1</Version>
+    <Title>MQTT Client (TLS fix pending)</Title>
+    <Authors>Joshua Small</Authors>
+    <Description>MQTT 3.1.1 and 5.0 client for Q-SYS. Development candidate: TLS CA replacement fix pending.</Description>
+    <PackageProjectUrl>https://github.com/joshua-small/qsys-mqtt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/joshua-small/qsys-mqtt</RepositoryUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageIconUrl>https://joshua-small.github.io/qsys-mqtt/icon.png</PackageIconUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>Q-SYS;Plugin;MqttClient</PackageTags>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <NoWarn>NU5128</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="content/MqttClient.qplug" Pack="true" PackagePath="content/" />
+    <None Include="icon.png" Pack="true" PackagePath="/" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <None Include="LICENSE-luamqtt" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>
