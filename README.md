@@ -23,7 +23,7 @@ For manual installation, download `MqttClient.qplug` from [Releases](https://git
 
 **TLS fix pending:** after a working CA certificate was replaced with an unrelated CA, Designer 10.5 could reconnect unexpectedly. Do not rely on Apply / reconnect to revoke a previously trusted CA. This development package preserves that known issue; publishing it does not fix or validate TLS trust replacement. Use plain TCP only on a network where unencrypted MQTT is appropriate. Track the fix in this repository's Issues.
 
-The [native TLS reproducer and results](diagnostics/native-tls/README.md) isolate this failure from the MQTT engine: new sockets accepted the server while configured with an unrelated CA during full, non-resumed TLS handshakes. Trust also persisted after stopping/restarting emulation in the same Designer process. No supported plugin-level trust reset has been established; [issue 1](https://github.com/joshua-small/qsys-mqtt/issues/1) remains open.
+New native TLS sockets accepted the server while configured with an unrelated CA during full, non-resumed TLS handshakes. Physical Core acceptance remains open. No supported plugin-level trust reset has been established; [issue 1](https://github.com/joshua-small/qsys-mqtt/issues/1) remains open.
 
 ## Configure
 
