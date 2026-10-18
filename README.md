@@ -48,3 +48,11 @@ The packet codecs are unmodified MIT-licensed [luamqtt 3.5.0](https://github.com
 Report bugs through [Issues](https://github.com/joshua-small/qsys-mqtt/issues), including plugin/Q-SYS versions, device/broker model and reproduction steps. Remove credentials from shared logs and designs.
 
 This is an independent personal development package, not a Q-SYS Verified Asset or manufacturer-endorsed release. Existing source attribution is retained.
+
+### Offline package checks
+
+Run `python3 scripts/verify.py` and `python3 -m unittest discover -s tests -p test_package_identity.py`. Before a release, run `python3 scripts/verify.py --release-tag v<VERSION>`. The exact tag, project package version and `PluginInfo.Version` must agree. `BuildVersion` is a separate optional SDK field. These checks do not establish Designer or hardware acceptance.
+
+### Offline behavioral checks
+
+With Python 3.12, install `tests/requirements.txt` in a virtual environment, then run `python tests/run_checks.py`. Lupa 2.6 supplies the Lua 5.3 runtime explicitly. Tests use fake host objects and retained synthetic cases; package integrity is checked separately. They do not contact a broker, connect to hardware, or establish Designer/Core acceptance. Do not run with Python optimization enabled.
