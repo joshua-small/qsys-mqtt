@@ -20,11 +20,16 @@ def main():
     args = parser.parse_args()
     root = Path.cwd()
     packages = root / "dist" / "packages"
+    if packages.exists() and any(packages.iterdir()):
+        raise RuntimeError("Use an empty package staging directory")
     packages.mkdir(parents=True, exist_ok=True)
+    withdrawn = set(json.loads((root / "withdrawn-versions.json").read_text())["tags"])
     releases = json.loads(run("gh", "api", f"repos/{args.repository}/releases", "--paginate", "--slurp"))
     for page in releases:
         for release in page:
             if release["draft"] or release["prerelease"]:
+                continue
+            if release["tag_name"] in withdrawn:
                 continue
             if not any(a["name"].endswith(".nupkg") for a in release["assets"]):
                 raise RuntimeError(f"Published release missing package: {release['tag_name']}")

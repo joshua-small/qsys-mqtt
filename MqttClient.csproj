@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <PackageId>JoshuaSmall.Qsys.MqttClient</PackageId>
-    <Version>0.3.1.0</Version>
+    <Version>0.3.1.1</Version>
     <Title>MQTT Client (CA restart required)</Title>
     <Authors>Joshua Small</Authors>
     <Description>MQTT 3.1.1 and 5.0 client for Q-SYS. Development candidate: CA changes require Save to Core and Run; native trust isolation remains unresolved.</Description>

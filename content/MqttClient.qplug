@@ -1,8 +1,8 @@
 -- MQTT client candidate for Q-SYS 10.5. See the adjacent README for acceptance limits.
 PluginInfo = {
   Name = "Utilities~MQTT Client",
-  Version = "0.3.1.0",
-  BuildVersion = "0.3.1.0",
+  Version = "0.3.1.1",
+  BuildVersion = "0.3.1.1",
   Id = "f622973c-31a1-4ab0-afd0-2fbb9a436eb3",
   Author = "Joshua Small",
   Manufacturer = "Generic",

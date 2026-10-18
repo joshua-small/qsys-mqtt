@@ -1,6 +1,6 @@
 # MQTT Client for Q-SYS
 
-Plugin and package version **0.3.1.0**. A self-contained MQTT 3.1.1/5.0 client with publish/subscribe, QoS 0/1, retained messages, Last Will and 1–8 paired channels. No separately installed Lua module is required.
+Plugin and package version **0.3.1.1**. A self-contained MQTT 3.1.1/5.0 client with publish/subscribe, QoS 0/1, retained messages, Last Will and 1–8 paired channels. No separately installed Lua module is required.
 
 **CA changes require Save to Core & Run.** This version stops connection attempts when its loaded CA changes and displays **CA changed: Save to Core & Run required**. It is an interim guard for Q-SYS 10.5.0 native TLS trust retention, not a complete runtime fix. For emulation, exit and relaunch Designer; stopping emulation or reloading Lua is insufficient.
 
