@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>JoshuaSmall.Qsys.MqttClient</id>
+    <version>0.3.1.1</version>
+    <title>MQTT Client (CA restart required)</title>
+    <authors>Joshua Small</authors>
+    <icon>icon.png</icon>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/joshua-small/qsys-mqtt</projectUrl>
+    <iconUrl>https://joshua-small.github.io/qsys-mqtt/icon.png</iconUrl>
+    <description>MQTT 3.1.1 and 5.0 client for Q-SYS. Development candidate: CA changes require Save to Core and Run; native trust isolation remains unresolved.</description>
+    <tags>Q-SYS Plugin MqttClient</tags>
+    <repository type="git" url="https://github.com/joshua-small/qsys-mqtt" />
+  </metadata>
+</package>
